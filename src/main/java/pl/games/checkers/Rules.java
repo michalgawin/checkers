@@ -30,18 +30,19 @@ public class Rules {
     public static Predicate<Pawn> isKing() {
         return (Pawn pawn) -> pawn.isKing();
     }
-
-    public static Predicate<Pawn> isDiagonalMove() {
+    
+    public static Predicate<Pawn> isDiagonalMove(Position nextPosition) {
         return pawn ->
-                (Math.abs(getChangeWidth(pawn)) == Math.abs(getChangeHeight(pawn))) && (getChangeWidth(pawn) != 0);
+                (Math.abs(getChangeWidth(pawn, nextPosition)) == Math.abs(getChangeHeight(pawn, nextPosition))) &&
+                        (getChangeWidth(pawn, nextPosition) != 0);
     }
 
-    private static int getChangeWidth(Pawn pawn) {
-        return pawn.nextPosition().x - pawn.currentPosition().x;
+    private static int getChangeWidth(Pawn pawn, Position position) {
+        return position.x - pawn.currentPosition().x;
     }
 
-    private static int getChangeHeight(Pawn pawn) {
-        return pawn.nextPosition().y - pawn.currentPosition().y;
+    private static int getChangeHeight(Pawn pawn, Position position) {
+        return position.y - pawn.currentPosition().y;
     }
 
 }
