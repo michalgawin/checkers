@@ -123,42 +123,7 @@ public class Checkerboard {
             return new Move(MoveType.INVALID);
         }
 
-        if (pawn.isKing()) {
-            return tryMoveKing(pawn, nextPosition);
-        }
         return tryMovePawn(pawn, nextPosition);
-    }
-
-    private Move tryMoveKing(Pawn pawn, Position nextPosition) {
-        int stepsNum = Math.abs(nextPosition.x - pawn.currentPosition().x);
-
-        Position currentPosition = pawn.currentPosition();
-        int xDirection = Integer.compare(nextPosition.x, currentPosition.x);
-        int yDirection = Integer.compare(nextPosition.y, currentPosition.y);
-
-        long ownPawns = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() == pawn.getType())
-                .limit(1)
-                .count();
-        if (ownPawns > 0) {
-            return new Move(MoveType.INVALID);
-        }
-        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() != pawn.getType())
-                .limit(2)
-                .count();
-        if (opponentsToKill > 1) {
-            return new Move(MoveType.INVALID);
-        }
-
-        return IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() != pawn.getType())
-                .findAny()
-                .map(p -> new Move(MoveType.KILL).capturedPawn(p))
-                .orElse(new Move(MoveType.MOVE));
     }
 
     private Move tryMovePawn(Pawn pawn, Position nextPosition) {
@@ -170,26 +135,31 @@ public class Checkerboard {
 
         boolean toward = yDirection == pawn.getType().direction;
 
-        if (stepsNum == 1 && toward) {
-            long ownPawns = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                    .filter(p -> p != null)
-                    .filter(p -> p.getType() == pawn.getType())
-                    .limit(1)
-                    .count();
-            if (!toward || ownPawns > 0) {
-                return new Move(MoveType.INVALID);
-            }
-        } else if (stepsNum == 2) {
-            long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                    .filter(p -> p != null)
-                    .filter(p -> p.getType() != pawn.getType())
-                    .limit(2)
-                    .count();
-            if (opponentsToKill != 1) {
-                return new Move(MoveType.INVALID);
-            }
-        } else {
+        long alliesToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
+                .filter(p -> p != null)
+                .filter(p -> p.getType() == pawn.getType())
+                .limit(1)
+                .count();
+        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
+                .filter(p -> p != null)
+                .filter(p -> p.getType() != pawn.getType())
+                .limit(2)
+                .count();
+
+        if (opponentsToKill > 1 || alliesToKill > 0) {
             return new Move(MoveType.INVALID);
+        } else if (!pawn.isKing()) {
+            if (stepsNum == 1) {
+                if (!toward) {
+                    return new Move(MoveType.INVALID);
+                }
+            } else if (stepsNum == 2) {
+                if (opponentsToKill != 1) {
+                    return new Move(MoveType.INVALID);
+                }
+            } else {
+                return new Move(MoveType.INVALID);
+            }
         }
 
         return IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
