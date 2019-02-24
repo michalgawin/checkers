@@ -119,6 +119,9 @@ public class Checkerboard {
         if (isNotAllowedMove().test(nextPosition)) {
             return new Move(MoveType.INVALID);
         }
+        if (Rules.isDiagonalMove(nextPosition).negate().test(pawn)) {
+            return new Move(MoveType.INVALID);
+        }
 
         if (pawn.isKing()) {
             return tryMoveKing(pawn, nextPosition);
@@ -127,27 +130,26 @@ public class Checkerboard {
     }
 
     private Move tryMoveKing(Pawn pawn, Position nextPosition) {
-        if (Rules.isDiagonalMove(nextPosition).negate().test(pawn)) {
-            return new Move(MoveType.INVALID);
-        }
-
         int stepsNum = Math.abs(nextPosition.x - pawn.currentPosition().x);
 
         Position currentPosition = pawn.currentPosition();
         int xDirection = Integer.compare(nextPosition.x, currentPosition.x);
         int yDirection = Integer.compare(nextPosition.y, currentPosition.y);
 
-        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() != pawn.getType())
-                .limit(2)
-                .count();
         long ownPawns = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
                 .filter(p -> p != null)
                 .filter(p -> p.getType() == pawn.getType())
                 .limit(1)
                 .count();
-        if (opponentsToKill > 1 || ownPawns > 0) {
+        if (ownPawns > 0) {
+            return new Move(MoveType.INVALID);
+        }
+        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
+                .filter(p -> p != null)
+                .filter(p -> p.getType() != pawn.getType())
+                .limit(2)
+                .count();
+        if (opponentsToKill > 1) {
             return new Move(MoveType.INVALID);
         }
 
@@ -160,34 +162,33 @@ public class Checkerboard {
     }
 
     private Move tryMovePawn(Pawn pawn, Position nextPosition) {
-        if (Rules.isDiagonalMove(nextPosition).negate().test(pawn)) {
-            return new Move(MoveType.INVALID);
-        }
-
         int stepsNum = Math.abs(nextPosition.x - pawn.currentPosition().x);
 
         Position currentPosition = pawn.currentPosition();
         int xDirection = Integer.compare(nextPosition.x, currentPosition.x);
         int yDirection = Integer.compare(nextPosition.y, currentPosition.y);
 
-        long ownPawns = 0;
-        long opponentsToKill = 0;
         boolean toward = yDirection == pawn.getType().direction;
 
         if (stepsNum == 1 && toward) {
-            ownPawns = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
+            long ownPawns = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
                     .filter(p -> p != null)
                     .filter(p -> p.getType() == pawn.getType())
                     .limit(1)
                     .count();
+            if (!toward || ownPawns > 0) {
+                return new Move(MoveType.INVALID);
+            }
         } else if (stepsNum == 2) {
-            opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
+            long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
                     .filter(p -> p != null)
                     .filter(p -> p.getType() != pawn.getType())
                     .limit(2)
                     .count();
-        }
-        if ((opponentsToKill == 0 && !toward) || opponentsToKill > 1 || ownPawns > 0) {
+            if (opponentsToKill != 1) {
+                return new Move(MoveType.INVALID);
+            }
+        } else {
             return new Move(MoveType.INVALID);
         }
 
