@@ -14,25 +14,25 @@ public class Rules {
         return position -> tiles[position.x][position.y].hasPiece();
     }
 
-    public static Predicate<Position> isOpponent(Tile tiles[][], Pawn pawn) {
-        return position -> tiles[position.x][position.y].getPawn().getType() != pawn.getType();
-    }
-
     public static Predicate<Position> isTailAllowed() {
         return position -> (position.x + position.y) % 2 != 0;
     }
 
-    public static Predicate<Pawn> isOnOppositeBorder() {
+    public static Predicate<Pawn> isLastRow() {
         return (Pawn pawn) -> (pawn.getType() == PawnType.WHITE && pawn.nextPosition().y == 0) ||
                     (pawn.getType() == PawnType.BLACK && pawn.nextPosition().y == Checkerboard.HEIGHT - 1);
+    }
+
+    public static Predicate<Pawn> isOpponent(Pawn pawn) {
+        return p -> p.getType() != pawn.getType();
     }
 
     public static Predicate<Pawn> isKing() {
         return (Pawn pawn) -> pawn.isKing();
     }
-    
-    public static Predicate<Pawn> isDiagonalMove(Position nextPosition) {
-        return pawn ->
+
+    public static Predicate<Position> isDiagonalMove(Pawn pawn) {
+        return nextPosition ->
                 (Math.abs(getChangeWidth(pawn, nextPosition)) == Math.abs(getChangeHeight(pawn, nextPosition))) &&
                         (getChangeWidth(pawn, nextPosition) != 0);
     }

@@ -98,7 +98,7 @@ public class Checkerboard {
                 board[currentPosition.x][currentPosition.y].setPawn(null);
                 board[nextPosition.x][nextPosition.y].setPawn(pawn);
 
-                Pawn otherPawn = result.capturedPawn();
+                Pawn otherPawn = result.killedPawn();
                 board[otherPawn.currentPosition().x][otherPawn.currentPosition().y].setPawn(null);
                 pawnGroup.getChildren().remove(otherPawn);
 
@@ -116,10 +116,11 @@ public class Checkerboard {
     }
 
     private Move tryMove(Pawn pawn, Position nextPosition) {
-        if (isNotAllowedMove().test(nextPosition)) {
-            return new Move(MoveType.INVALID);
-        }
-        if (Rules.isDiagonalMove(nextPosition).negate().test(pawn)) {
+        if (Rules.isWithinRange(0, Checkerboard.WIDTH, 0, Checkerboard.HEIGHT).negate()
+                .or(Rules.isTailAllowed().negate())
+                .or(Rules.isTailBusy(board))
+                .or(Rules.isDiagonalMove(pawn).negate())
+                .test(nextPosition)) {
             return new Move(MoveType.INVALID);
         }
 
@@ -135,14 +136,14 @@ public class Checkerboard {
 
         boolean toward = yDirection == pawn.getType().direction;
 
-        long alliesToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() == pawn.getType())
+        long alliesToKill = IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
+                .filter(hasPawn())
+                .filter(Rules.isOpponent(pawn).negate())
                 .limit(1)
                 .count();
-        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() != pawn.getType())
+        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
+                .filter(hasPawn())
+                .filter(Rules.isOpponent(pawn))
                 .limit(2)
                 .count();
 
@@ -162,41 +163,23 @@ public class Checkerboard {
             }
         }
 
-        return IntStream.range(1, stepsNum).mapToObj(getPawn(pawn, xDirection, yDirection))
-                .filter(p -> p != null)
-                .filter(p -> p.getType() != pawn.getType())
+        return IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
+                .filter(hasPawn())
+                .filter(Rules.isOpponent(pawn))
                 .findAny()
-                .map(p -> new Move(MoveType.KILL).capturedPawn(p))
+                .map(p -> new Move(MoveType.KILL, p))
                 .orElse(new Move(MoveType.MOVE));
     }
 
-    private Predicate<Position> isNotAllowedMove() {
-        return isWithinBoard().negate()
-                .or(isTailBusy())
-                .or(isTailAllowed().negate());
-    }
-
-    private Predicate<Position> isWithinBoard() {
-        return Rules.isWithinRange(0, Checkerboard.WIDTH, 0, Checkerboard.HEIGHT);
-    }
-
-    private Predicate<Position> isTailBusy() {
-        return Rules.isTailBusy(board);
-    }
-
-    private Predicate<Position> isOpponent(Pawn pawn) {
-        return Rules.isOpponent(board, pawn);
-    }
-
-    private Predicate<Position> isTailAllowed() {
-        return Rules.isTailAllowed();
+    private Predicate<Pawn> hasPawn() {
+        return pawn -> pawn != null;
     }
 
     private Predicate<Pawn> isKingCandidate() {
-        return Rules.isKing().negate().and(Rules.isOnOppositeBorder());
+        return Rules.isKing().negate().and(Rules.isLastRow());
     }
 
-    private IntFunction<Pawn> getPawn(Pawn pawn, int xDir, int yDir) {
+    private IntFunction<Pawn> getPawnFromTail(Pawn pawn, int xDir, int yDir) {
         return (int i) -> board[pawn.currentPosition().x + i*xDir][pawn.currentPosition().y + i*yDir].getPawn();
     }
 
