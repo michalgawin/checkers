@@ -5,6 +5,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Shape;
 
+import java.awt.geom.Point2D;
+
 public class Pawn extends StackPane {
 
     private static final double RADIUS_X = Checkerboard.TILE_SIZE_X * 0.35;
@@ -15,33 +17,27 @@ public class Pawn extends StackPane {
     private boolean king = false;
     private Shape topOfPawn;
 
-    private double mouseX, mouseY;
-    private double latestMouseX, latestMouseY;
+    private Point2D.Double currentCursorPosition = new Point2D.Double(-1, -1);;
+    private Point2D.Double latestCursorPosition = new Point2D.Double(-1, -1);;
 
     public PawnType getType() {
         return type;
     }
 
-    public int lastColumn() {
-        return Checkerboard.toBoardWidth(latestMouseX);
+    public Position currentPosition() {
+        return new Position(Checkerboard.toBoardWidth(latestCursorPosition.x),
+                Checkerboard.toBoardHeight(latestCursorPosition.y));
     }
 
-    public int lastRow() {
-        return Checkerboard.toBoardHeight(latestMouseY);
-    }
-
-    public int nextColumn() {
-        return (int)(getLayoutX() + Checkerboard.TILE_SIZE_X / 2) / Checkerboard.TILE_SIZE_X;
-    }
-
-    public int nextRow() {
-        return (int)(getLayoutY() + Checkerboard.TILE_SIZE_Y / 2) / Checkerboard.TILE_SIZE_Y;
+    public Position nextPosition() {
+        return new Position((int)(getLayoutX() + Checkerboard.TILE_SIZE_X / 2) / Checkerboard.TILE_SIZE_X,
+                (int)(getLayoutY() + Checkerboard.TILE_SIZE_Y / 2) / Checkerboard.TILE_SIZE_Y);
     }
 
     public Pawn(PawnType type, int column, int row) {
         this.type = type;
 
-        move(column, row);
+        move(new Position(column, row));
 
         Shape sideOfPawn = createPawn(type.color, PAWN_SIZE_Y);
         topOfPawn = createPawn(type.color, 0);
@@ -49,12 +45,13 @@ public class Pawn extends StackPane {
         getChildren().addAll(sideOfPawn, topOfPawn);
 
         setOnMousePressed(e -> {
-            mouseX = e.getSceneX();
-            mouseY = e.getSceneY();
+            currentCursorPosition.x = e.getSceneX();
+            currentCursorPosition.y = e.getSceneY();
         });
 
         setOnMouseDragged(e -> {
-            relocate(e.getSceneX() - mouseX + latestMouseX, e.getSceneY() - mouseY + latestMouseY);
+            relocate(e.getSceneX() - currentCursorPosition.x + latestCursorPosition.x,
+                    e.getSceneY() - currentCursorPosition.y + latestCursorPosition.y);
         });
     }
 
@@ -78,13 +75,13 @@ public class Pawn extends StackPane {
         getChildren().add(createPawn(type.color, -PAWN_SIZE_Y));
     }
 
-    public void move(int column, int row) {
-        latestMouseX = column * Checkerboard.TILE_SIZE_X;
-        latestMouseY = row * Checkerboard.TILE_SIZE_Y;
-        relocate(latestMouseX, latestMouseY);
+    public void move(Position position) {
+        latestCursorPosition.x = position.x * Checkerboard.TILE_SIZE_X;
+        latestCursorPosition.y = position.y * Checkerboard.TILE_SIZE_Y;
+        relocate(latestCursorPosition.x, latestCursorPosition.y);
     }
 
     public void abortMove() {
-        relocate(latestMouseX, latestMouseY);
+        relocate(latestCursorPosition.x, latestCursorPosition.y);
     }
 }
