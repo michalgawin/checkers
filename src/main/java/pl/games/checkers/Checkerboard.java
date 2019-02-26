@@ -81,30 +81,30 @@ public class Checkerboard {
 
     private void move(Pawn pawn, Position nextPosition) {
         Move result;
-        Position currentPosition = pawn.currentPosition();
+        Position lastPosition = pawn.lastPosition();
 
         result = tryMove(pawn, nextPosition);
         switch (result.type()) {
             case INVALID:
-                pawn.abortMove();
+                pawn.cancelMove();
                 break;
             case MOVE:
                 pawn.move(nextPosition);
-                board[currentPosition.x][currentPosition.y].setPawn(null);
+                board[lastPosition.x][lastPosition.y].setPawn(null);
                 board[nextPosition.x][nextPosition.y].setPawn(pawn);
                 break;
             case KILL:
                 pawn.move(nextPosition);
-                board[currentPosition.x][currentPosition.y].setPawn(null);
+                board[lastPosition.x][lastPosition.y].setPawn(null);
                 board[nextPosition.x][nextPosition.y].setPawn(pawn);
 
                 Pawn otherPawn = result.killedPawn();
-                board[otherPawn.currentPosition().x][otherPawn.currentPosition().y].setPawn(null);
+                board[otherPawn.lastPosition().x][otherPawn.lastPosition().y].setPawn(null);
                 pawnGroup.getChildren().remove(otherPawn);
 
                 if (isKingCandidate().test(pawn)) {
                     Position position = new Position(
-                            nextPosition.x + Integer.compare(nextPosition.x, currentPosition.x) * 2, currentPosition.y);
+                            nextPosition.x + Integer.compare(nextPosition.x, lastPosition.x) * 2, lastPosition.y);
                     move(pawn, position);
                 }
                 break;
@@ -128,11 +128,11 @@ public class Checkerboard {
     }
 
     private Move tryMovePawn(Pawn pawn, Position nextPosition) {
-        int stepsNum = Math.abs(nextPosition.x - pawn.currentPosition().x);
+        int stepsNum = Math.abs(nextPosition.x - pawn.lastPosition().x);
 
-        Position currentPosition = pawn.currentPosition();
-        int xDirection = Integer.compare(nextPosition.x, currentPosition.x);
-        int yDirection = Integer.compare(nextPosition.y, currentPosition.y);
+        Position lastPosition = pawn.lastPosition();
+        int xDirection = Integer.compare(nextPosition.x, lastPosition.x);
+        int yDirection = Integer.compare(nextPosition.y, lastPosition.y);
 
         boolean toward = yDirection == pawn.getType().direction;
 
@@ -180,7 +180,7 @@ public class Checkerboard {
     }
 
     private IntFunction<Pawn> getPawnFromTail(Pawn pawn, int xDir, int yDir) {
-        return (int i) -> board[pawn.currentPosition().x + i*xDir][pawn.currentPosition().y + i*yDir].getPawn();
+        return (int i) -> board[pawn.lastPosition().x + i*xDir][pawn.lastPosition().y + i*yDir].getPawn();
     }
 
 }

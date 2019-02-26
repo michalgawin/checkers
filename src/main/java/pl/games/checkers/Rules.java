@@ -38,11 +38,11 @@ public class Rules {
     }
 
     private static int getChangeWidth(Pawn pawn, Position position) {
-        return position.x - pawn.currentPosition().x;
+        return position.x - pawn.lastPosition().x;
     }
 
     private static int getChangeHeight(Pawn pawn, Position position) {
-        return position.y - pawn.currentPosition().y;
+        return position.y - pawn.lastPosition().y;
     }
 
 }

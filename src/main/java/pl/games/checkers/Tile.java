@@ -33,7 +33,7 @@ public class Tile extends Rectangle {
         return type == TileType.ALLOWED;
     }
 
-    public static boolean isNotAllowed(int x, int y) {
+    private static boolean isNotAllowed(int x, int y) {
         return (x + y) % 2 == 0;
     }
 

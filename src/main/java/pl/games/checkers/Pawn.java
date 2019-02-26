@@ -17,22 +17,8 @@ public class Pawn extends StackPane {
     private boolean king = false;
     private Shape topOfPawn;
 
-    private Point2D.Double currentCursorPosition = new Point2D.Double(-1, -1);;
     private Point2D.Double latestCursorPosition = new Point2D.Double(-1, -1);;
-
-    public PawnType getType() {
-        return type;
-    }
-
-    public Position currentPosition() {
-        return new Position(Checkerboard.toBoardWidth(latestCursorPosition.x),
-                Checkerboard.toBoardHeight(latestCursorPosition.y));
-    }
-
-    public Position nextPosition() {
-        return new Position((int)(getLayoutX() + Checkerboard.TILE_SIZE_X / 2) / Checkerboard.TILE_SIZE_X,
-                (int)(getLayoutY() + Checkerboard.TILE_SIZE_Y / 2) / Checkerboard.TILE_SIZE_Y);
-    }
+    private Point2D.Double lastCursorPosition = new Point2D.Double(-1, -1);;
 
     public Pawn(PawnType type, int column, int row) {
         this.type = type;
@@ -45,25 +31,28 @@ public class Pawn extends StackPane {
         getChildren().addAll(sideOfPawn, topOfPawn);
 
         setOnMousePressed(e -> {
-            currentCursorPosition.x = e.getSceneX();
-            currentCursorPosition.y = e.getSceneY();
+            latestCursorPosition.x = e.getSceneX();
+            latestCursorPosition.y = e.getSceneY();
         });
 
         setOnMouseDragged(e -> {
-            relocate(e.getSceneX() - currentCursorPosition.x + latestCursorPosition.x,
-                    e.getSceneY() - currentCursorPosition.y + latestCursorPosition.y);
+            relocate(e.getSceneX() - latestCursorPosition.x + lastCursorPosition.x,
+                    e.getSceneY() - latestCursorPosition.y + lastCursorPosition.y);
         });
     }
 
-    public Shape createPawn(Color color, double shiftY) {
-        Ellipse shape = new Ellipse(RADIUS_X, RADIUS_Y);
-        shape.setFill(color);
-        shape.setStroke(Color.BLACK);
+    public PawnType getType() {
+        return type;
+    }
 
-        shape.setTranslateX((Checkerboard.TILE_SIZE_X - RADIUS_X * 2) / 2);
-        shape.setTranslateY((Checkerboard.TILE_SIZE_Y - RADIUS_Y * 2) / 2 + shiftY);
+    public Position lastPosition() {
+        return new Position(Checkerboard.toBoardWidth(lastCursorPosition.x),
+                Checkerboard.toBoardHeight(lastCursorPosition.y));
+    }
 
-        return shape;
+    public Position nextPosition() {
+        return new Position((int)(getLayoutX() + Checkerboard.TILE_SIZE_X / 2) / Checkerboard.TILE_SIZE_X,
+                (int)(getLayoutY() + Checkerboard.TILE_SIZE_Y / 2) / Checkerboard.TILE_SIZE_Y);
     }
 
     public boolean isKing() {
@@ -76,12 +65,24 @@ public class Pawn extends StackPane {
     }
 
     public void move(Position position) {
-        latestCursorPosition.x = position.x * Checkerboard.TILE_SIZE_X;
-        latestCursorPosition.y = position.y * Checkerboard.TILE_SIZE_Y;
-        relocate(latestCursorPosition.x, latestCursorPosition.y);
+        lastCursorPosition.x = position.x * Checkerboard.TILE_SIZE_X;
+        lastCursorPosition.y = position.y * Checkerboard.TILE_SIZE_Y;
+        relocate(lastCursorPosition.x, lastCursorPosition.y);
     }
 
-    public void abortMove() {
-        relocate(latestCursorPosition.x, latestCursorPosition.y);
+    public void cancelMove() {
+        relocate(lastCursorPosition.x, lastCursorPosition.y);
     }
+
+    private Shape createPawn(Color color, double shiftY) {
+        Ellipse shape = new Ellipse(RADIUS_X, RADIUS_Y);
+        shape.setFill(color);
+        shape.setStroke(Color.BLACK);
+
+        shape.setTranslateX((Checkerboard.TILE_SIZE_X - RADIUS_X * 2) / 2);
+        shape.setTranslateY((Checkerboard.TILE_SIZE_Y - RADIUS_Y * 2) / 2 + shiftY);
+
+        return shape;
+    }
+
 }
