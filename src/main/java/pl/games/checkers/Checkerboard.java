@@ -9,6 +9,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -20,13 +21,10 @@ public class Checkerboard {
     public static final int WIDTH = 8;
     public static final int HEIGHT = 8;
 
-    private Group tileGroup = new Group();
-    private Group pawnGroup = new Group();
-
-    private final Tile[][] board = new Tile[WIDTH][HEIGHT];
-
-    public Checkerboard() {
-    }
+    private final Pane pane;
+    private final Tile[][] board;
+    private final Group tileGroup;
+    private Group pawnGroup;
 
     public static int toBoardWidth(double position) {
         return (int)(position + TILE_SIZE_X / 2) / TILE_SIZE_X;
@@ -36,17 +34,12 @@ public class Checkerboard {
         return (int)(position + TILE_SIZE_Y / 2) / TILE_SIZE_Y;
     }
 
-    public Parent createBoardWithPawns() {
-        Pane root = new Pane();
-        root.setPrefSize(WIDTH * TILE_SIZE_X, HEIGHT * TILE_SIZE_Y);
-        root.getChildren().addAll(tileGroup, pawnGroup);
+    public static Parent createBoardWithPawns() {
+        Checkerboard checkerboard = new Checkerboard();
 
         for (int row = 0; row < HEIGHT; row++) {
             for (int column = 0; column < WIDTH; column++) {
                 Tile tile = new Tile(column, row);
-                board[column][row] = tile;
-
-                tileGroup.getChildren().add(tile);
 
                 if (tile.isAllowed()) {
                     PawnType pawnType = null;
@@ -58,17 +51,44 @@ public class Checkerboard {
                         pawnType = PawnType.WHITE;
                     }
 
-                    if (pawnType != null) {
-                        Pawn pawn = createPawn(pawnType, column, row);
-                        tile.setPawn(pawn);
-                        pawnGroup.getChildren().add(pawn);
-                    }
+                    checkerboard.addTileWithPawn(column, row, tile, pawnType);
+                } else {
+                    checkerboard.addTile(column, row, tile);
                 }
             }
         }
-        root.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
 
-        return root;
+        return checkerboard.getPane();
+    }
+
+    private Checkerboard() {
+        board = new Tile[WIDTH][HEIGHT];
+
+        pane = new Pane();
+        pane.setPrefSize(WIDTH * TILE_SIZE_X, HEIGHT * TILE_SIZE_Y);
+        pane.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        tileGroup = new Group();
+        pawnGroup = new Group();
+
+        pane.getChildren().addAll(tileGroup, pawnGroup);
+    }
+
+    private Pane getPane() {
+        return pane;
+    }
+
+    private void addTile(int column, int row, Tile tile) {
+        addTileWithPawn(column, row, tile, null);
+    }
+
+    private void addTileWithPawn(int column, int row, Tile tile, PawnType pawnType) {
+        board[column][row] = tile;
+        tileGroup.getChildren().add(tile);
+
+        if (pawnType != null) {
+            addPawn(column, row, tile, createPawn(pawnType, column, row));
+        }
     }
 
     private Pawn createPawn(PawnType type, int column, int row) {
@@ -77,6 +97,28 @@ public class Checkerboard {
         pawn.setOnMouseReleased(e -> move(pawn, pawn.nextPosition()));
 
         return pawn;
+    }
+
+    private void addPawn(int column, int row, Tile tile, Pawn pawn) {
+        tile.setPawn(pawn);
+        pawnGroup.getChildren().add(pawn);
+    }
+
+    private void removePawn(Pawn pawn) {
+        getTile(pawn.lastPosition().x, pawn.lastPosition().y).setPawn(null);
+        pawnGroup.getChildren().remove(pawn);
+    }
+
+    private void movePawn(Pawn pawn, Position nextPosition) {
+        Position lastPosition = pawn.lastPosition();
+
+        pawn.move(nextPosition);
+        getTile(lastPosition.x, lastPosition.y).setPawn(null);
+        getTile(nextPosition.x, nextPosition.y).setPawn(pawn);
+    }
+
+    private Tile getTile(int row, int column) {
+        return board[row][column];
     }
 
     private void move(Pawn pawn, Position nextPosition) {
@@ -89,18 +131,11 @@ public class Checkerboard {
                 pawn.cancelMove();
                 break;
             case MOVE:
-                pawn.move(nextPosition);
-                board[lastPosition.x][lastPosition.y].setPawn(null);
-                board[nextPosition.x][nextPosition.y].setPawn(pawn);
+                movePawn(pawn, nextPosition);
                 break;
             case KILL:
-                pawn.move(nextPosition);
-                board[lastPosition.x][lastPosition.y].setPawn(null);
-                board[nextPosition.x][nextPosition.y].setPawn(pawn);
-
-                Pawn otherPawn = result.killedPawn();
-                board[otherPawn.lastPosition().x][otherPawn.lastPosition().y].setPawn(null);
-                pawnGroup.getChildren().remove(otherPawn);
+                movePawn(pawn, nextPosition);
+                removePawn(result.killedPawn());
 
                 if (isKingCandidate().test(pawn)) {
                     Position position = new Position(
@@ -116,7 +151,7 @@ public class Checkerboard {
     }
 
     private Move tryMove(Pawn pawn, Position nextPosition) {
-        if (Rules.isWithinRange(0, Checkerboard.WIDTH, 0, Checkerboard.HEIGHT).negate()
+        if (isWithinRange().negate()
                 .or(Rules.isTailAllowed().negate())
                 .or(Rules.isTailBusy(board))
                 .or(Rules.isDiagonalMove(pawn).negate())
@@ -179,8 +214,12 @@ public class Checkerboard {
         return Rules.isKing().negate().and(Rules.isLastRow());
     }
 
+    private Predicate<Position> isWithinRange() {
+        return Rules.isWithinRange(0, Checkerboard.WIDTH, 0, Checkerboard.HEIGHT);
+    }
+
     private IntFunction<Pawn> getPawnFromTail(Pawn pawn, int xDir, int yDir) {
-        return (int i) -> board[pawn.lastPosition().x + i*xDir][pawn.lastPosition().y + i*yDir].getPawn();
+        return (int i) -> getTile(pawn.lastPosition().x + i*xDir, pawn.lastPosition().y + i*yDir).getPawn();
     }
 
 }
