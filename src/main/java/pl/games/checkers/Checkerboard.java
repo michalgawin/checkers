@@ -8,12 +8,15 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import pl.games.checkers.ai.PawnBoard;
+import pl.games.checkers.ai.MoveAi;
+import pl.games.checkers.ai.TileBoard;
 
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-public class Checkerboard {
+public class Checkerboard implements Copier<PawnBoard> {
 
     public static final int TILE_SIZE_X = 100;
     public static final int TILE_SIZE_Y = 80;
@@ -23,9 +26,10 @@ public class Checkerboard {
     private Group tileGroup = new Group();
     private Group pawnGroup = new Group();
 
-    private final Tile[][] board = new Tile[WIDTH][HEIGHT];
+    private final TileBoard tileBoard;
 
     public Checkerboard() {
+        tileBoard = new TileBoard(HEIGHT, WIDTH, (row, column) -> createPawn(row, column));
     }
 
     public static int toBoardWidth(double position) {
@@ -36,89 +40,97 @@ public class Checkerboard {
         return (int)(position + TILE_SIZE_Y / 2) / TILE_SIZE_Y;
     }
 
-    public Parent createBoardWithPawns() {
+    public Parent drawBoardWithPawns() {
         Pane root = new Pane();
         root.setPrefSize(WIDTH * TILE_SIZE_X, HEIGHT * TILE_SIZE_Y);
         root.getChildren().addAll(tileGroup, pawnGroup);
 
-        for (int row = 0; row < HEIGHT; row++) {
-            for (int column = 0; column < WIDTH; column++) {
-                Tile tile = new Tile(column, row);
-                board[column][row] = tile;
-
-                tileGroup.getChildren().add(tile);
-
-                if (tile.isAllowed()) {
-                    PawnType pawnType = null;
-
-                    if (row <= 2) {
-                        pawnType = PawnType.BLACK;
-                    }
-                    if (row >= 5) {
-                        pawnType = PawnType.WHITE;
-                    }
-
-                    if (pawnType != null) {
-                        Pawn pawn = createPawn(pawnType, column, row);
-                        tile.setPawn(pawn);
-                        pawnGroup.getChildren().add(pawn);
-                    }
-                }
+        for (int row = 0; row < tileBoard.getHeight(); row++) {
+            for (int column = 0; column < tileBoard.getWidth(); column++) {
+                tileGroup.getChildren().add(tileBoard.getTile(row, column));
+                if (tileBoard.isNotEmpty(row, column))
+                    pawnGroup.getChildren().add(tileBoard.getPawn(row, column));
             }
         }
+
         root.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
 
         return root;
     }
 
-    private Pawn createPawn(PawnType type, int column, int row) {
-        Pawn pawn = new Pawn(type, column, row);
+    private PawnFigure createPawn(int row, int column) {
+        PawnFigure pawn = null;
+        PawnType pawnType = null;
 
-        pawn.setOnMouseReleased(e -> move(pawn, pawn.nextPosition()));
+        if (row <= 2) {
+            pawnType = PawnType.BLACK;
+        }
+        if (row >= 5) {
+            pawnType = PawnType.WHITE;
+        }
+
+        if (pawnType != null) {
+            pawn = createPawn(pawnType, row, column);
+        }
 
         return pawn;
     }
 
-    private void move(Pawn pawn, Position nextPosition) {
+    private PawnFigure createPawn(PawnType type, int row, int column) {
+        PawnFigure pawn = new PawnFigure(type, row, column);
+
+        pawn.setOnMouseReleased(e -> move(tileBoard, pawn, pawn.nextPosition()));
+
+        return pawn;
+    }
+
+    private void move(TileBoard board, PawnFigure pawn, Position nextPosition) {
+        move(board, pawn, nextPosition, false);
+    }
+
+    private void move(TileBoard board, PawnFigure pawn, Position nextPosition, boolean ai) {
         Move result;
         Position currentPosition = pawn.currentPosition();
 
         result = tryMove(pawn, nextPosition);
         switch (result.type()) {
             case INVALID:
-                pawn.abortMove();
+                board.abortMove(pawn);
                 break;
             case MOVE:
-                pawn.move(nextPosition);
-                board[currentPosition.x][currentPosition.y].setPawn(null);
-                board[nextPosition.x][nextPosition.y].setPawn(pawn);
+                board.move(pawn, currentPosition, nextPosition);
                 break;
             case KILL:
-                pawn.move(nextPosition);
-                board[currentPosition.x][currentPosition.y].setPawn(null);
-                board[nextPosition.x][nextPosition.y].setPawn(pawn);
-
+                board.move(pawn, currentPosition, nextPosition);
                 Pawn otherPawn = result.killedPawn();
-                board[otherPawn.currentPosition().x][otherPawn.currentPosition().y].setPawn(null);
+                board.removePawn(otherPawn.currentPosition());
                 pawnGroup.getChildren().remove(otherPawn);
 
-                if (isKingCandidate().test(pawn)) {
-                    Position position = new Position(
-                            nextPosition.x + Integer.compare(nextPosition.x, currentPosition.x) * 2, currentPosition.y);
-                    move(pawn, position);
+                Pawn p = new MoveAi(copy(), PawnType.WHITE).getBestMove(pawn);
+                if (p != null && p.hasBeating()) {
+                    move(board, board.getPawn(p.currentPosition()), p.nextPosition(), ai);
                 }
+
                 break;
         }
 
-        if (isKingCandidate().test(pawn)) {
+        if (isNewKing().test(pawn)) {
             pawn.setKing();
+        }
+
+        if (!ai && result.type() != MoveType.INVALID) {
+            PawnType pType = pawn.getType() == PawnType.WHITE ? PawnType.BLACK : PawnType.WHITE;
+            Pawn p = new MoveAi(copy(), pType).getBestMove();
+            if (p != null) {
+                move(board, board.getPawn(p.currentPosition()), p.nextPosition(), true);
+            }
         }
     }
 
     private Move tryMove(Pawn pawn, Position nextPosition) {
-        if (Rules.isWithinRange(0, Checkerboard.WIDTH, 0, Checkerboard.HEIGHT).negate()
-                .or(Rules.isTailAllowed().negate())
-                .or(Rules.isTailBusy(board))
+        if (Rules.isOnBoard().negate()
+                .or(Rules.isPositionAllowed().negate())
+                .or(Rules.isPositionOccupied(tileBoard))
                 .or(Rules.isDiagonalMove(pawn).negate())
                 .test(nextPosition)) {
             return new Move(MoveType.INVALID);
@@ -128,11 +140,11 @@ public class Checkerboard {
     }
 
     private Move tryMovePawn(Pawn pawn, Position nextPosition) {
-        int stepsNum = Math.abs(nextPosition.x - pawn.currentPosition().x);
+        int stepsNum = Math.abs(nextPosition.column() - pawn.currentPosition().column());
 
         Position currentPosition = pawn.currentPosition();
-        int xDirection = Integer.compare(nextPosition.x, currentPosition.x);
-        int yDirection = Integer.compare(nextPosition.y, currentPosition.y);
+        int xDirection = Integer.compare(nextPosition.column(), currentPosition.column());
+        int yDirection = Integer.compare(nextPosition.row(), currentPosition.row());
 
         boolean toward = yDirection == pawn.getType().direction;
 
@@ -175,12 +187,27 @@ public class Checkerboard {
         return pawn -> pawn != null;
     }
 
-    private Predicate<Pawn> isKingCandidate() {
+    private Predicate<Pawn> isNewKing() {
         return Rules.isKing().negate().and(Rules.isLastRow());
     }
 
     private IntFunction<Pawn> getPawnFromTail(Pawn pawn, int xDir, int yDir) {
-        return (int i) -> board[pawn.currentPosition().x + i*xDir][pawn.currentPosition().y + i*yDir].getPawn();
+        return (int i) -> tileBoard.getPawn(pawn.currentPosition().row() + i*yDir, pawn.currentPosition().column() + i*xDir);
     }
 
+    @Override
+    public PawnBoard copy() {
+        PawnBoard pawns = new PawnBoard(HEIGHT, WIDTH);
+
+        for (int row = 0; row < tileBoard.getHeight(); row++) {
+            for (int col = 0; col < tileBoard.getWidth(); col++) {
+                if (tileBoard.isNotEmpty(row, col)) {
+                    pawns.setPawn(row, col, tileBoard.getPawn(row, col).copy());
+                } else {
+                    pawns.setPawn(row, col, null);
+                }
+            }
+        }
+        return pawns;
+    }
 }

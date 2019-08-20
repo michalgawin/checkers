@@ -8,7 +8,7 @@ public class Checkers extends Application {
 
     @Override
     public void start(Stage primaryStage) {
-        Scene scene = new Scene(new Checkerboard().createBoardWithPawns());
+        Scene scene = new Scene(new Checkerboard().drawBoardWithPawns());
         primaryStage.setTitle("Warcaby");
         primaryStage.setScene(scene);
         primaryStage.centerOnScreen();

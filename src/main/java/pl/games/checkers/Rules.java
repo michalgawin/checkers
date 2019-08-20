@@ -1,26 +1,36 @@
 package pl.games.checkers;
 
+import pl.games.checkers.ai.TileBoard;
+
 import java.util.function.Predicate;
 
 public class Rules {
 
-    public static Predicate<Position> isWithinRange(int startX, int endX, int startY, int endY) {
+    public static Predicate<Position> isOnBoard() {
+        return isOnBoard(0, Checkerboard.WIDTH, 0, Checkerboard.HEIGHT);
+    }
+
+    private static Predicate<Position> isOnBoard(int startX, int endX, int startY, int endY) {
         return position ->
-                (position.x >= startX && position.x < endX) &&
-                        (position.y >= startY && position.y < endY);
+                (position.column() >= startX && position.column() < endX) &&
+                        (position.row() >= startY && position.row() < endY);
     }
 
-    public static Predicate<Position> isTailBusy(Tile tiles[][]) {
-        return position -> tiles[position.x][position.y].hasPiece();
+    public static Predicate<Position> isPositionOccupied(TileBoard tileBoard) {
+        return position -> tileBoard.isNotEmpty(position.row(), position.column());
     }
 
-    public static Predicate<Position> isTailAllowed() {
-        return position -> (position.x + position.y) % 2 != 0;
+    public static Predicate<Position> isPositionOccupied(Pawn pawns[][]) {
+        return position -> pawns[position.column()][position.row()] != null;
+    }
+
+    public static Predicate<Position> isPositionAllowed() {
+        return position -> (position.column() + position.row()) % 2 != 0;
     }
 
     public static Predicate<Pawn> isLastRow() {
-        return (Pawn pawn) -> (pawn.getType() == PawnType.WHITE && pawn.nextPosition().y == 0) ||
-                    (pawn.getType() == PawnType.BLACK && pawn.nextPosition().y == Checkerboard.HEIGHT - 1);
+        return (Pawn pawn) -> (pawn.getType() == PawnType.WHITE && pawn.nextPosition().row() == 0) ||
+                    (pawn.getType() == PawnType.BLACK && pawn.nextPosition().row() == Checkerboard.HEIGHT - 1);
     }
 
     public static Predicate<Pawn> isOpponent(Pawn pawn) {
@@ -38,11 +48,11 @@ public class Rules {
     }
 
     private static int getChangeWidth(Pawn pawn, Position position) {
-        return position.x - pawn.currentPosition().x;
+        return position.column() - pawn.currentPosition().column();
     }
 
     private static int getChangeHeight(Pawn pawn, Position position) {
-        return position.y - pawn.currentPosition().y;
+        return position.row() - pawn.currentPosition().row();
     }
 
 }

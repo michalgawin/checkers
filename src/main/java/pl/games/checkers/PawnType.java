@@ -7,6 +7,10 @@ public enum PawnType {
     BLACK(1, Color.valueOf("#002439")),
     WHITE(-1, Color.valueOf("#e4eff0"));
 
+    public int getDirection() {
+        return direction;
+    }
+
     final int direction;
     final Color color;
 
