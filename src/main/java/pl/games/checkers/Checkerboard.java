@@ -12,6 +12,7 @@ import pl.games.checkers.ai.PawnBoard;
 import pl.games.checkers.ai.MoveAi;
 import pl.games.checkers.ai.TileBoard;
 
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
@@ -149,12 +150,12 @@ public class Checkerboard implements Copier<PawnBoard> {
         boolean toward = yDirection == pawn.getType().direction;
 
         long alliesToKill = IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
-                .filter(hasPawn())
+                .filter(Objects::nonNull)
                 .filter(Rules.isOpponent(pawn).negate())
                 .limit(1)
                 .count();
         long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
-                .filter(hasPawn())
+                .filter(Objects::nonNull)
                 .filter(Rules.isOpponent(pawn))
                 .limit(2)
                 .count();
@@ -176,15 +177,11 @@ public class Checkerboard implements Copier<PawnBoard> {
         }
 
         return IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
-                .filter(hasPawn())
+                .filter(Objects::nonNull)
                 .filter(Rules.isOpponent(pawn))
                 .findAny()
                 .map(p -> new Move(MoveType.KILL, p))
                 .orElse(new Move(MoveType.MOVE));
-    }
-
-    private Predicate<Pawn> hasPawn() {
-        return pawn -> pawn != null;
     }
 
     private Predicate<Pawn> isNewKing() {
