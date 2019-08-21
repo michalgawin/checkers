@@ -1,7 +1,6 @@
 package pl.games.checkers;
 
 import javafx.geometry.Insets;
-import javafx.scene.Group;
 import javafx.scene.Parent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
@@ -25,13 +24,10 @@ public class Checkerboard implements Copier<Board> {
     public static final int WIDTH = 8;
     public static final int HEIGHT = 8;
 
-    private Group tileGroup = new Group();
-    private Group pawnGroup = new Group();
-
     private final TileBoard tileBoard;
 
     public Checkerboard() {
-        tileBoard = new TileBoard(HEIGHT, WIDTH, (row, column) -> createPawn(row, column));
+        tileBoard = new TileBoard(HEIGHT, WIDTH, (b, p) -> e -> move(b, p, p.nextPosition()));
     }
 
     public static int toBoardWidth(double position) {
@@ -44,46 +40,12 @@ public class Checkerboard implements Copier<Board> {
 
     public Parent drawBoardWithPawns() {
         Pane root = new Pane();
+
         root.setPrefSize(WIDTH * TILE_SIZE_X, HEIGHT * TILE_SIZE_Y);
-        root.getChildren().addAll(tileGroup, pawnGroup);
-
-        for (int row = 0; row < tileBoard.getHeight(); row++) {
-            for (int column = 0; column < tileBoard.getWidth(); column++) {
-                tileGroup.getChildren().add(tileBoard.getTile(row, column));
-                if (tileBoard.isNotEmpty(row, column))
-                    pawnGroup.getChildren().add(tileBoard.getPawn(row, column));
-            }
-        }
-
+        root.getChildren().addAll(tileBoard.getGroups());
         root.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
 
         return root;
-    }
-
-    private PawnFigure createPawn(int row, int column) {
-        PawnFigure pawn = null;
-        PawnType pawnType = null;
-
-        if (row <= 2) {
-            pawnType = PawnType.BLACK;
-        }
-        if (row >= 5) {
-            pawnType = PawnType.WHITE;
-        }
-
-        if (pawnType != null) {
-            pawn = createPawn(pawnType, row, column);
-        }
-
-        return pawn;
-    }
-
-    private PawnFigure createPawn(PawnType type, int row, int column) {
-        PawnFigure pawn = new PawnFigure(type, row, column);
-
-        pawn.setOnMouseReleased(e -> move(tileBoard, pawn, pawn.nextPosition()));
-
-        return pawn;
     }
 
     private void move(TileBoard board, PawnFigure pawn, Position nextPosition) {
@@ -106,7 +68,6 @@ public class Checkerboard implements Copier<Board> {
                 board.move(pawn, currentPosition, nextPosition);
                 Pawn otherPawn = result.killedPawn();
                 board.removePawn(otherPawn.currentPosition());
-                pawnGroup.getChildren().remove(otherPawn);
 
                 Pawn p = new MoveAi(copy(), PawnType.WHITE).getBestMove(pawn);
                 if (p != null && p.hasBeating()) {
