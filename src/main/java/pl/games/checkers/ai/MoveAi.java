@@ -8,7 +8,7 @@ import java.util.concurrent.ForkJoinPool;
 
 public class MoveAi {
 
-    ForkJoinPool forkJoinPool = new ForkJoinPool(4);
+    private static final ForkJoinPool forkJoinPool = new ForkJoinPool(4);
 
     private final Board board;
     private final PawnType pawnType;

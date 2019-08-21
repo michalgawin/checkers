@@ -52,7 +52,10 @@ public class Checkerboard implements Copier<Board> {
         move(board, pawn, nextPosition, false);
     }
 
-    private void move(Board board, Pawn pawn, Position nextPosition, boolean ai) {
+    /**
+     * @return return true if move was executed by AI, false otherwise
+     */
+    private boolean move(Board board, Pawn pawn, Position nextPosition, boolean ai) {
         Move result;
         Position currentPosition = pawn.currentPosition();
 
@@ -69,9 +72,9 @@ public class Checkerboard implements Copier<Board> {
                 Pawn otherPawn = result.killedPawn();
                 board.removePawn(otherPawn.currentPosition());
 
-                Pawn p = new MoveAi(copy(), PawnType.WHITE).getBestMove(pawn);
+                Pawn p = new MoveAi(copy(), pawn.getType()).getBestMove(pawn);
                 if (p != null && p.hasBeating()) {
-                    move(board, board.getPawn(p.currentPosition()), p.nextPosition(), ai);
+                    ai = move(board, board.getPawn(p.currentPosition()), p.nextPosition(), ai);
                 }
 
                 break;
@@ -85,9 +88,13 @@ public class Checkerboard implements Copier<Board> {
             PawnType pType = pawn.getType() == PawnType.WHITE ? PawnType.BLACK : PawnType.WHITE;
             Pawn p = new MoveAi(copy(), pType).getBestMove();
             if (p != null) {
-                move(board, board.getPawn(p.currentPosition()), p.nextPosition(), true);
+                move(board, board.getPawn(p.currentPosition()), p.nextPosition(), !ai);
             }
+
+            return true;
         }
+
+        return false;
     }
 
     private Move tryMove(Pawn pawn, Position nextPosition) {
