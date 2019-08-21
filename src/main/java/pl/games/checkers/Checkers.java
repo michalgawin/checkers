@@ -3,6 +3,7 @@ package pl.games.checkers;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
+import pl.games.checkers.ui.Checkerboard;
 
 public class Checkers extends Application {
 

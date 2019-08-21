@@ -1,6 +1,4 @@
-package pl.games.checkers.ai;
-
-import pl.games.checkers.Pawn;
+package pl.games.checkers.model;
 
 public class PawnBoard extends Board<Pawn> {
 

@@ -1,7 +1,8 @@
 package pl.games.checkers.ai;
 
-import pl.games.checkers.Pawn;
-import pl.games.checkers.PawnType;
+import pl.games.checkers.model.Pawn;
+import pl.games.checkers.model.Board;
+import pl.games.checkers.model.PawnType;
 
 import java.util.Map;
 import java.util.concurrent.ForkJoinPool;

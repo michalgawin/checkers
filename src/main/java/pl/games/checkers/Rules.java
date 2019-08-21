@@ -1,7 +1,9 @@
 package pl.games.checkers;
 
-import pl.games.checkers.ai.Board;
-import pl.games.checkers.ai.TileBoard;
+import pl.games.checkers.model.Board;
+import pl.games.checkers.model.Pawn;
+import pl.games.checkers.model.PawnType;
+import pl.games.checkers.ui.Checkerboard;
 
 import java.util.function.Predicate;
 
