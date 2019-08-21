@@ -1,5 +1,6 @@
 package pl.games.checkers;
 
+import pl.games.checkers.ai.Board;
 import pl.games.checkers.ai.TileBoard;
 
 import java.util.function.Predicate;
@@ -16,12 +17,8 @@ public class Rules {
                         (position.row() >= startY && position.row() < endY);
     }
 
-    public static Predicate<Position> isPositionOccupied(TileBoard tileBoard) {
-        return position -> tileBoard.isNotEmpty(position.row(), position.column());
-    }
-
-    public static Predicate<Position> isPositionOccupied(Pawn pawns[][]) {
-        return position -> pawns[position.column()][position.row()] != null;
+    public static Predicate<Position> isPositionOccupied(Board board) {
+        return position -> board.isNotEmpty(position.row(), position.column());
     }
 
     public static Predicate<Position> isPositionAllowed() {

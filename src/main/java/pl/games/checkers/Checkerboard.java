@@ -24,10 +24,10 @@ public class Checkerboard implements Copier<Board> {
     public static final int WIDTH = 8;
     public static final int HEIGHT = 8;
 
-    private final TileBoard tileBoard;
+    private final Board board;
 
     public Checkerboard() {
-        tileBoard = new TileBoard(HEIGHT, WIDTH, (b, p) -> e -> move(b, p, p.nextPosition()));
+        board = new TileBoard(HEIGHT, WIDTH, (b, p) -> e -> move(b, p, p.nextPosition()));
     }
 
     public static int toBoardWidth(double position) {
@@ -42,17 +42,17 @@ public class Checkerboard implements Copier<Board> {
         Pane root = new Pane();
 
         root.setPrefSize(WIDTH * TILE_SIZE_X, HEIGHT * TILE_SIZE_Y);
-        root.getChildren().addAll(tileBoard.getGroups());
+        root.getChildren().addAll(((TileBoard) board).getGroups());
         root.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
 
         return root;
     }
 
-    private void move(TileBoard board, PawnFigure pawn, Position nextPosition) {
+    private void move(Board board, Pawn pawn, Position nextPosition) {
         move(board, pawn, nextPosition, false);
     }
 
-    private void move(TileBoard board, PawnFigure pawn, Position nextPosition, boolean ai) {
+    private void move(Board board, Pawn pawn, Position nextPosition, boolean ai) {
         Move result;
         Position currentPosition = pawn.currentPosition();
 
@@ -93,7 +93,7 @@ public class Checkerboard implements Copier<Board> {
     private Move tryMove(Pawn pawn, Position nextPosition) {
         if (Rules.isOnBoard().negate()
                 .or(Rules.isPositionAllowed().negate())
-                .or(Rules.isPositionOccupied(tileBoard))
+                .or(Rules.isPositionOccupied(board))
                 .or(Rules.isDiagonalMove(pawn).negate())
                 .test(nextPosition)) {
             return new Move(MoveType.INVALID);
@@ -151,17 +151,17 @@ public class Checkerboard implements Copier<Board> {
     }
 
     private IntFunction<Pawn> getPawnFromTail(Pawn pawn, int xDir, int yDir) {
-        return (int i) -> tileBoard.getPawn(pawn.currentPosition().row() + i*yDir, pawn.currentPosition().column() + i*xDir);
+        return (int i) -> board.getPawn(pawn.currentPosition().row() + i*yDir, pawn.currentPosition().column() + i*xDir);
     }
 
     @Override
     public Board copy() {
         Board pawns = new PawnBoard(HEIGHT, WIDTH);
 
-        for (int row = 0; row < tileBoard.getHeight(); row++) {
-            for (int col = 0; col < tileBoard.getWidth(); col++) {
-                if (tileBoard.isNotEmpty(row, col)) {
-                    pawns.setPawn(row, col, tileBoard.getPawn(row, col).copy());
+        for (int row = 0; row < board.getHeight(); row++) {
+            for (int col = 0; col < board.getWidth(); col++) {
+                if (board.isNotEmpty(row, col)) {
+                    pawns.setPawn(row, col, board.getPawn(row, col).copy());
                 } else {
                     pawns.setPawn(row, col, null);
                 }
