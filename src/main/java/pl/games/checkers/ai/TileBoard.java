@@ -1,6 +1,5 @@
 package pl.games.checkers.ai;
 
-import pl.games.checkers.Pawn;
 import pl.games.checkers.PawnFigure;
 import pl.games.checkers.Tile;
 
@@ -38,23 +37,6 @@ public class TileBoard extends Board<PawnFigure> {
     public TileBoard setPawn(int y, int x, PawnFigure pawn) {
         tiles[y][x].setPawn(pawn);
         return this;
-    }
-
-    @Override
-    public Pawn[][] copy() {
-        Pawn[][] pawnsCopy = new Pawn[getHeight()][getWidth()];
-
-        for (int row = 0; row < getHeight(); row++) {
-            for (int col = 0; col < getWidth(); col++) {
-                if (getPawn(row, col) != null) {
-                    pawnsCopy[row][col] = getPawn(row, col).copy();
-                } else {
-                    pawnsCopy[row][col] = null;
-                }
-            }
-        }
-
-        return pawnsCopy;
     }
 
     public Tile getTile(int y, int x) {

@@ -11,7 +11,7 @@ public class PawnBoard extends Board<Pawn> {
         this.pawns = new Pawn[height][width];
     }
 
-    public PawnBoard(PawnBoard pawns) {
+    public PawnBoard(Board pawns) {
         super(pawns.getHeight(), pawns.getWidth());
         this.pawns = pawns.copy();
     }
@@ -29,23 +29,6 @@ public class PawnBoard extends Board<Pawn> {
         } catch (ArrayIndexOutOfBoundsException e) {
             return null;
         }
-    }
-
-    @Override
-    public Pawn[][] copy() {
-        Pawn[][] pawnsCopy = new Pawn[getHeight()][getWidth()];
-
-        for (int row = 0; row < getHeight(); row++) {
-            for (int col = 0; col < getWidth(); col++) {
-                if (pawns[row][col] != null) {
-                    pawnsCopy[row][col] = pawns[row][col].copy();
-                } else {
-                    pawnsCopy[row][col] = null;
-                }
-            }
-        }
-
-        return pawnsCopy;
     }
 
 }

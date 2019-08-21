@@ -49,17 +49,6 @@ public class PawnFigure extends StackPane implements Pawn {
         });
     }
 
-    private Shape createRoundel(Color color, double shiftY) {
-        Ellipse roundel = new Ellipse(RADIUS_X, RADIUS_Y);
-        roundel.setFill(color);
-        roundel.setStroke(Color.BLACK);
-
-        roundel.setTranslateX((Checkerboard.TILE_SIZE_X - RADIUS_X * 2) / 2);
-        roundel.setTranslateY((Checkerboard.TILE_SIZE_Y - RADIUS_Y * 2) / 2 + shiftY);
-
-        return roundel;
-    }
-
     @Override
     public PawnType getType() {
         return reference.getType();
@@ -138,6 +127,17 @@ public class PawnFigure extends StackPane implements Pawn {
     @Override
     public Pawn copy() {
         return reference.copy();
+    }
+
+    private Shape createRoundel(Color color, double shiftY) {
+        Ellipse roundel = new Ellipse(RADIUS_X, RADIUS_Y);
+        roundel.setFill(color);
+        roundel.setStroke(Color.BLACK);
+
+        roundel.setTranslateX((Checkerboard.TILE_SIZE_X - RADIUS_X * 2) / 2);
+        roundel.setTranslateY((Checkerboard.TILE_SIZE_Y - RADIUS_Y * 2) / 2 + shiftY);
+
+        return roundel;
     }
 
 }

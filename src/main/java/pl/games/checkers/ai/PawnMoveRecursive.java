@@ -14,15 +14,15 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PawnMoveRecursive.class);
 
-    private final PawnBoard pawnBoard;
+    private final Board pawnBoard;
     private final Pawn pawn;
     private final boolean fork;
 
-    public PawnMoveRecursive(PawnBoard pawnBoard, Pawn pawn) {
+    public PawnMoveRecursive(Board pawnBoard, Pawn pawn) {
         this(pawnBoard, pawn, true);
     }
 
-    public PawnMoveRecursive(PawnBoard pawnBoard, Pawn pawn, boolean fork) {
+    public PawnMoveRecursive(Board pawnBoard, Pawn pawn, boolean fork) {
         this.pawnBoard = pawnBoard;
         this.pawn = pawn;
         this.fork = fork;
@@ -69,7 +69,7 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
         return new AbstractMap.SimpleEntry<>(-100, pawn);
     }
 
-    private List<PawnMoveRecursive> changePosition(PawnBoard pawnBoard, BiFunction<Position, Integer, Position> operation, Pawn pawn) {
+    private List<PawnMoveRecursive> changePosition(Board pawnBoard, BiFunction<Position, Integer, Position> operation, Pawn pawn) {
         List<PawnMoveRecursive> pawnMoveRecursives = new ArrayList<>();
 
         int direction = pawn.getType().getDirection();
@@ -88,7 +88,7 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
         return pawnMoveRecursives;
     }
 
-    private PawnMoveRecursive changePosition(PawnBoard pawnBoard, Pawn p, Position position, BiFunction<Position, Integer, Position> operation) {
+    private PawnMoveRecursive changePosition(Board pawnBoard, Pawn p, Position position, BiFunction<Position, Integer, Position> operation) {
         int direction = p.getType().getDirection();
         p.nextPosition(position);
 

@@ -8,6 +8,7 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import pl.games.checkers.ai.Board;
 import pl.games.checkers.ai.PawnBoard;
 import pl.games.checkers.ai.MoveAi;
 import pl.games.checkers.ai.TileBoard;
@@ -17,7 +18,7 @@ import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.IntStream;
 
-public class Checkerboard implements Copier<PawnBoard> {
+public class Checkerboard implements Copier<Board> {
 
     public static final int TILE_SIZE_X = 100;
     public static final int TILE_SIZE_Y = 80;
@@ -193,8 +194,8 @@ public class Checkerboard implements Copier<PawnBoard> {
     }
 
     @Override
-    public PawnBoard copy() {
-        PawnBoard pawns = new PawnBoard(HEIGHT, WIDTH);
+    public Board copy() {
+        Board pawns = new PawnBoard(HEIGHT, WIDTH);
 
         for (int row = 0; row < tileBoard.getHeight(); row++) {
             for (int col = 0; col < tileBoard.getWidth(); col++) {
@@ -205,6 +206,7 @@ public class Checkerboard implements Copier<PawnBoard> {
                 }
             }
         }
+
         return pawns;
     }
 }

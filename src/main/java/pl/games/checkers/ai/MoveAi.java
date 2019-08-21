@@ -10,20 +10,20 @@ public class MoveAi {
 
     ForkJoinPool forkJoinPool = new ForkJoinPool(4);
 
-    private final PawnBoard pawnBoard;
+    private final Board board;
     private final PawnType pawnType;
 
-    public MoveAi(PawnBoard pawnBoard, PawnType pawnType) {
-        this.pawnBoard = pawnBoard;
+    public MoveAi(Board board, PawnType pawnType) {
+        this.board = board;
         this.pawnType = pawnType;
     }
 
     public Pawn getBestMove() {
         Map.Entry<Integer, Pawn> bestMove = null;
 
-        for (int y = 0; y < pawnBoard.getHeight(); y++) {
-            for (int x = 0; x < pawnBoard.getWidth(); x++) {
-                Pawn pawn = pawnBoard.getPawn(y, x);
+        for (int y = 0; y < board.getHeight(); y++) {
+            for (int x = 0; x < board.getWidth(); x++) {
+                Pawn pawn = board.getPawn(y, x);
                 if (pawn != null && pawn.getType() == pawnType) {
                     Map.Entry<Integer, Pawn> entry = getNextMove(pawn);
                     if (entry != null) {
@@ -47,7 +47,7 @@ public class MoveAi {
 
     private Map.Entry<Integer, Pawn> getNextMove(Pawn pawn) {
         if (pawn != null) {
-            return forkJoinPool.invoke(new PawnMoveRecursive(pawnBoard, pawn));
+            return forkJoinPool.invoke(new PawnMoveRecursive(board, pawn));
         }
         return null;
     }
