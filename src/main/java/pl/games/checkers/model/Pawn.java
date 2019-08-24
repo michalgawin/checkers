@@ -1,7 +1,6 @@
 package pl.games.checkers.model;
 
 import pl.games.checkers.Copier;
-import pl.games.checkers.Position;
 
 public interface Pawn extends Copier<Pawn> {
 
@@ -24,6 +23,8 @@ public interface Pawn extends Copier<Pawn> {
     Pawn setMove(Move move);
 
     boolean hasBeating();
+
+    Pawn killedPawn();
 
     void abortMove();
 

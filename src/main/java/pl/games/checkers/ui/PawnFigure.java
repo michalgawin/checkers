@@ -4,7 +4,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Ellipse;
 import javafx.scene.shape.Shape;
-import pl.games.checkers.Position;
+import pl.games.checkers.model.Position;
 import pl.games.checkers.model.Move;
 import pl.games.checkers.model.Pawn;
 import pl.games.checkers.model.PawnImpl;
@@ -122,6 +122,11 @@ public class PawnFigure extends StackPane implements Pawn {
     @Override
     public boolean hasBeating() {
         return reference.hasBeating();
+    }
+
+    @Override
+    public Pawn killedPawn() {
+        return reference.killedPawn();
     }
 
     @Override

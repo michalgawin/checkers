@@ -1,7 +1,6 @@
 package pl.games.checkers.model;
 
 import pl.games.checkers.Copier;
-import pl.games.checkers.Position;
 
 /**
  * Board represents checkerboard with pawns and provides basic operations on pawns.

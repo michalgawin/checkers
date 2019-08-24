@@ -3,7 +3,7 @@ package pl.games.checkers.ui;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
-import pl.games.checkers.Position;
+import pl.games.checkers.model.Position;
 import pl.games.checkers.model.Board;
 import pl.games.checkers.model.PawnType;
 

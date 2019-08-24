@@ -1,6 +1,5 @@
 package pl.games.checkers.model;
 
-import pl.games.checkers.Position;
 import pl.games.checkers.ui.PawnFigure;
 
 public class PawnImpl implements Pawn {
@@ -79,6 +78,11 @@ public class PawnImpl implements Pawn {
     @Override
     public boolean hasBeating() {
         return move.type() == MoveType.KILL;
+    }
+
+    @Override
+    public Pawn killedPawn() {
+        return hasBeating() ? move.killedPawn() : null;
     }
 
     @Override

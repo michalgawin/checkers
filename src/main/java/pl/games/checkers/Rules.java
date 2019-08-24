@@ -3,6 +3,7 @@ package pl.games.checkers;
 import pl.games.checkers.model.Board;
 import pl.games.checkers.model.Pawn;
 import pl.games.checkers.model.PawnType;
+import pl.games.checkers.model.Position;
 import pl.games.checkers.ui.Checkerboard;
 
 import java.util.function.Predicate;

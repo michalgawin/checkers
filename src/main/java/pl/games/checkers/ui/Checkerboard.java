@@ -8,7 +8,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import pl.games.checkers.Copier;
-import pl.games.checkers.Position;
+import pl.games.checkers.model.Position;
 import pl.games.checkers.Rules;
 import pl.games.checkers.model.*;
 import pl.games.checkers.ai.MoveAi;
@@ -56,9 +56,10 @@ public class Checkerboard implements Copier<Board> {
     /**
      * @return return true if move was executed by AI, false otherwise
      */
-    private boolean move(Board board, Pawn pawn, Position nextPosition, boolean ai) {
+    private boolean move(Board board, Pawn pawn, Position nextPosition, boolean isAi) {
         Move result;
         Position currentPosition = pawn.currentPosition();
+        boolean wasAi = isAi;
 
         result = tryMove(pawn, nextPosition);
         switch (result.type()) {
@@ -75,7 +76,7 @@ public class Checkerboard implements Copier<Board> {
 
                 Pawn p = new MoveAi(copy(), pawn.getType()).getBestMove(pawn);
                 if (p != null && p.hasBeating()) {
-                    ai = move(board, board.getPawn(p.currentPosition()), p.nextPosition(), ai);
+                    isAi = move(board, board.getPawn(p.currentPosition()), p.nextPosition(), isAi);
                 }
 
                 break;
@@ -85,11 +86,11 @@ public class Checkerboard implements Copier<Board> {
             pawn.setKing();
         }
 
-        if (!ai && result.type() != MoveType.INVALID) {
+        if (!isAi && result.type() != MoveType.INVALID) {
             PawnType pType = pawn.getType() == PawnType.WHITE ? PawnType.BLACK : PawnType.WHITE;
-            Pawn p = new MoveAi(copy(), pType).getBestMove();
-            if (p != null) {
-                move(board, board.getPawn(p.currentPosition()), p.nextPosition(), !ai);
+            Pawn p = new MoveAi(copy(), pType).getBestMove(4);
+            if (p != null && wasAi == isAi) {
+                move(board, board.getPawn(p.currentPosition()), p.nextPosition(), !isAi);
             }
 
             return true;
@@ -164,18 +165,18 @@ public class Checkerboard implements Copier<Board> {
 
     @Override
     public Board copy() {
-        Board pawns = new PawnBoard(HEIGHT, WIDTH);
+        Board board = new PawnBoard(HEIGHT, WIDTH);
 
-        for (int row = 0; row < board.getHeight(); row++) {
-            for (int col = 0; col < board.getWidth(); col++) {
-                if (board.isNotEmpty(row, col)) {
-                    pawns.setPawn(row, col, board.getPawn(row, col).copy());
+        for (int row = 0; row < this.board.getHeight(); row++) {
+            for (int col = 0; col < this.board.getWidth(); col++) {
+                if (this.board.isNotEmpty(row, col)) {
+                    board.setPawn(row, col, this.board.getPawn(row, col).copy());
                 } else {
-                    pawns.setPawn(row, col, null);
+                    board.setPawn(row, col, null);
                 }
             }
         }
 
-        return pawns;
+        return board;
     }
 }
