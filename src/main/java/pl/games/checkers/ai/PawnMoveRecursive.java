@@ -78,14 +78,19 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
         List<PawnMoveRecursive> pawnMoveRecursives = new ArrayList<>();
 
         int direction = pawn.getType().getDirection();
-        Position position = pawn.currentPosition();
-        for (int i = 0; (i < 1) || (i < 8 && pawn.isKing()); i++) {
+        for (Position position = operation.apply(pawn.currentPosition(), direction);
+             Rules.isOnBoard().test(position);
+             position = operation.apply(position, direction)
+        ) {
             Pawn p = pawn.copy();
-            position = operation.apply(position, direction);
             PawnMoveRecursive pawnMoveRecursive = changePosition(new PawnBoard(pawnBoard), p, position, operation);
             if (pawnMoveRecursive != null) {
                 pawnMoveRecursives.add(pawnMoveRecursive);
             } else {
+                break;
+            }
+
+            if (!p.isKing()) { //one move for not king
                 break;
             }
         }
