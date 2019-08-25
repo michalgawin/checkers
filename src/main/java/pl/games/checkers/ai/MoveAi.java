@@ -41,7 +41,7 @@ public class MoveAi {
         return bestMove != null ? bestMove.getValue() : null;
     }
 
-    public Pawn getBestMove(Pawn pawn) {
+    public Pawn getBestPawnMove(Pawn pawn) {
         Map.Entry<Integer, Pawn> bestMove = getNextMove(pawn);
         return bestMove != null && bestMove.getKey() > 0 ? bestMove.getValue() : null;
     }

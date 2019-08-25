@@ -15,6 +15,10 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PawnMoveRecursive.class);
 
+    private static final int BEAT = 3;
+    private static final int WALK = 1;
+    private static final int INVALID = -1;
+
     private final Board pawnBoard;
     private final Pawn pawn;
     private final boolean fork;
@@ -32,7 +36,7 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
     @Override
     protected Map.Entry<Integer, Pawn> compute() {
         if (fork) {
-            return ForkJoinTask.invokeAll(createMoves()).stream()
+            return ForkJoinTask.invokeAll(createMovesOf(pawnBoard, pawn)).stream()
                     .map(ForkJoinTask::join)
                     .max(Map.Entry.comparingByKey())
                     .orElse(null);
@@ -41,13 +45,13 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
         return getMove();
     }
 
-    private List<PawnMoveRecursive> createMoves() {
+    private List<PawnMoveRecursive> createMovesOf(Board board, Pawn pawn) {
         List<PawnMoveRecursive> pawnMoveRecursives = new ArrayList<>();
 
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(pawnBoard), Position::towardLeft, pawn));
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(pawnBoard), Position::towardRight, pawn));
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(pawnBoard), Position::backwardLeft, pawn));
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(pawnBoard), Position::backwardRight, pawn));
+        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::towardLeft, pawn));
+        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::towardRight, pawn));
+        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::backwardLeft, pawn));
+        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::backwardRight, pawn));
 
         return pawnMoveRecursives;
     }
@@ -60,14 +64,14 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
             boolean toward = yDirection == pawn.getType().getDirection();
 
             if (pawn.hasBeating()) {
-                return new AbstractMap.SimpleEntry<>(3, pawn);
+                return new AbstractMap.SimpleEntry<>(BEAT, pawn);
             } else if (pawn.isKing()){
-                return new AbstractMap.SimpleEntry<>(1, pawn);
+                return new AbstractMap.SimpleEntry<>(WALK, pawn);
             } else if (toward) {
-                return new AbstractMap.SimpleEntry<>(1, pawn);
+                return new AbstractMap.SimpleEntry<>(WALK, pawn);
             }
         }
-        return new AbstractMap.SimpleEntry<>(-100, pawn);
+        return new AbstractMap.SimpleEntry<>(INVALID, pawn);
     }
 
     private List<PawnMoveRecursive> changePosition(Board pawnBoard, BiFunction<Position, Integer, Position> operation, Pawn pawn) {

@@ -39,6 +39,23 @@ public class Checkerboard implements Copier<Board> {
         return (int)(position + TILE_SIZE_Y / 2) / TILE_SIZE_Y;
     }
 
+    @Override
+    public Board copy() {
+        Board board = new PawnBoard(HEIGHT, WIDTH);
+
+        for (int row = 0; row < this.board.getHeight(); row++) {
+            for (int col = 0; col < this.board.getWidth(); col++) {
+                if (this.board.isNotEmpty(row, col)) {
+                    board.setPawn(row, col, this.board.getPawn(row, col).copy());
+                } else {
+                    board.setPawn(row, col, null);
+                }
+            }
+        }
+
+        return board;
+    }
+
     public Parent drawBoardWithPawns() {
         Pane root = new Pane();
 
@@ -61,7 +78,7 @@ public class Checkerboard implements Copier<Board> {
         Position currentPosition = pawn.currentPosition();
         boolean wasAi = isAi;
 
-        result = tryMove(pawn, nextPosition);
+        result = tryMovePawn(pawn, nextPosition);
         switch (result.type()) {
             case INVALID:
                 board.abortMove(pawn);
@@ -74,7 +91,7 @@ public class Checkerboard implements Copier<Board> {
                 Pawn otherPawn = result.killedPawn();
                 board.removePawn(otherPawn.currentPosition());
 
-                Pawn p = new MoveAi(copy(), pawn.getType()).getBestMove(pawn);
+                Pawn p = new MoveAi(copy(), pawn.getType()).getBestPawnMove(pawn);
                 if (p != null && p.hasBeating()) {
                     isAi = move(board, board.getPawn(p.currentPosition()), p.nextPosition(), isAi);
                 }
@@ -86,9 +103,10 @@ public class Checkerboard implements Copier<Board> {
             pawn.setKing();
         }
 
+        // AI turn if user made a move
         if (!isAi && result.type() != MoveType.INVALID) {
             PawnType pType = pawn.getType() == PawnType.WHITE ? PawnType.BLACK : PawnType.WHITE;
-            Pawn p = new MoveAi(copy(), pType).getBestMove(4);
+            Pawn p = new MoveAi(copy(), pType).getBestMove();
             if (p != null && wasAi == isAi) {
                 move(board, board.getPawn(p.currentPosition()), p.nextPosition(), !isAi);
             }
@@ -99,55 +117,77 @@ public class Checkerboard implements Copier<Board> {
         return false;
     }
 
-    private Move tryMove(Pawn pawn, Position nextPosition) {
-        if (Rules.isOnBoard().negate()
-                .or(Rules.isPositionAllowed().negate())
-                .or(Rules.isPositionOccupied(board))
-                .or(Rules.isDiagonalMove(pawn).negate())
-                .test(nextPosition)) {
-            return new Move(MoveType.INVALID);
+    private Move tryMovePawn(Pawn pawn, Position nextPosition) {
+        if (canMoveOnBoard(pawn, nextPosition) && canMovePawn(pawn, nextPosition)) {
+            return pawnMove(pawn, nextPosition);
         }
 
-        return tryMovePawn(pawn, nextPosition);
+        return new Move(MoveType.INVALID);
     }
 
-    private Move tryMovePawn(Pawn pawn, Position nextPosition) {
-        int stepsNum = Math.abs(nextPosition.column() - pawn.currentPosition().column());
+    private boolean canMoveOnBoard(Pawn pawn, Position nextPosition) {
+        return Rules.isOnBoard()
+                .and(Rules.isPositionAllowed())
+                .and(Rules.isPositionOccupied(board).negate())
+                .and(Rules.isDiagonalMove(pawn))
+                .test(nextPosition);
+    }
 
+    private boolean canMovePawn(Pawn pawn, Position nextPosition) {
+        long countedAlliesToBeat = countAlliesToBeat(pawn, nextPosition);
+        long countedOpponentsToBeat = countOpponentsToBeat(pawn, nextPosition);
+
+        if (countedOpponentsToBeat > 1 || countedAlliesToBeat > 0) {
+            return false;
+        } else if (!pawn.isKing()) {
+            Position currentPosition = pawn.currentPosition();
+            int numOfSteps = numberOfMoves(currentPosition, nextPosition);
+            int verticalDirection = verticalDirection(currentPosition, nextPosition);
+            boolean toward = verticalDirection == pawn.getType().getDirection();
+
+            if (numOfSteps == 1 && !toward) {
+                return false;
+            } else if (numOfSteps >= 2 && countedOpponentsToBeat != 1) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private long countAlliesToBeat(Pawn pawn, Position nextPosition) {
         Position currentPosition = pawn.currentPosition();
-        int xDirection = Integer.compare(nextPosition.column(), currentPosition.column());
-        int yDirection = Integer.compare(nextPosition.row(), currentPosition.row());
+        int numOfSteps = numberOfMoves(currentPosition, nextPosition);
+        int horizontalDirection = horizontalDirection(currentPosition, nextPosition);
+        int verticalDirection = verticalDirection(currentPosition, nextPosition);
 
-        boolean toward = yDirection == pawn.getType().getDirection();
-
-        long alliesToKill = IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
+        return IntStream.range(1, numOfSteps).mapToObj(getPawnFromBoard(pawn, horizontalDirection, verticalDirection))
                 .filter(Objects::nonNull)
                 .filter(Rules.isOpponent(pawn).negate())
                 .limit(1)
                 .count();
-        long opponentsToKill = IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
+    }
+
+    private long countOpponentsToBeat(Pawn pawn, Position nextPosition) {
+        Position currentPosition = pawn.currentPosition();
+        int numOfSteps = numberOfMoves(currentPosition, nextPosition);
+        int horizontalDirection = horizontalDirection(currentPosition, nextPosition);
+        int verticalDirection = verticalDirection(currentPosition, nextPosition);
+
+        return IntStream.range(1, numOfSteps).mapToObj(getPawnFromBoard(pawn, horizontalDirection, verticalDirection))
                 .filter(Objects::nonNull)
                 .filter(Rules.isOpponent(pawn))
                 .limit(2)
                 .count();
+    }
 
-        if (opponentsToKill > 1 || alliesToKill > 0) {
-            return new Move(MoveType.INVALID);
-        } else if (!pawn.isKing()) {
-            if (stepsNum == 1) {
-                if (!toward) {
-                    return new Move(MoveType.INVALID);
-                }
-            } else if (stepsNum == 2) {
-                if (opponentsToKill != 1) {
-                    return new Move(MoveType.INVALID);
-                }
-            } else {
-                return new Move(MoveType.INVALID);
-            }
-        }
+    private Move pawnMove(Pawn pawn, Position nextPosition) {
+        Position currentPosition = pawn.currentPosition();
+        int stepsNum = numberOfMoves(currentPosition, nextPosition);
+        int xDirection = horizontalDirection(currentPosition, nextPosition);
+        int yDirection = verticalDirection(currentPosition, nextPosition);
 
-        return IntStream.range(1, stepsNum).mapToObj(getPawnFromTail(pawn, xDirection, yDirection))
+        return IntStream.range(1, stepsNum).mapToObj(getPawnFromBoard(pawn, xDirection, yDirection))
                 .filter(Objects::nonNull)
                 .filter(Rules.isOpponent(pawn))
                 .findAny()
@@ -159,24 +199,23 @@ public class Checkerboard implements Copier<Board> {
         return Rules.isKing().negate().and(Rules.isLastRow());
     }
 
-    private IntFunction<Pawn> getPawnFromTail(Pawn pawn, int xDir, int yDir) {
+    private IntFunction<Pawn> getPawnFromBoard(Pawn pawn, int xDir, int yDir) {
         return (int i) -> board.getPawn(pawn.currentPosition().row() + i*yDir, pawn.currentPosition().column() + i*xDir);
     }
 
-    @Override
-    public Board copy() {
-        Board board = new PawnBoard(HEIGHT, WIDTH);
+    private int numberOfMoves(Position currentPosition, Position nextPosition) {
+        int colDiff = Math.abs(nextPosition.column() - currentPosition.column());
+        assert colDiff == Math.abs(nextPosition.row() - currentPosition.row());
 
-        for (int row = 0; row < this.board.getHeight(); row++) {
-            for (int col = 0; col < this.board.getWidth(); col++) {
-                if (this.board.isNotEmpty(row, col)) {
-                    board.setPawn(row, col, this.board.getPawn(row, col).copy());
-                } else {
-                    board.setPawn(row, col, null);
-                }
-            }
-        }
-
-        return board;
+        return colDiff;
     }
+
+    private int horizontalDirection(Position currentPosition, Position nextPosition) {
+        return Integer.compare(nextPosition.column(), currentPosition.column());
+    }
+
+    private int verticalDirection(Position currentPosition, Position nextPosition) {
+        return Integer.compare(nextPosition.row(), currentPosition.row());
+    }
+
 }
