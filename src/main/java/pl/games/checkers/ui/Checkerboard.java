@@ -16,7 +16,7 @@ import pl.games.checkers.ai.MoveAi;
 import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 public class Checkerboard implements Copier<Board> {
 
@@ -147,7 +147,9 @@ public class Checkerboard implements Copier<Board> {
 
             if (numOfSteps == 1 && !toward) {
                 return false;
-            } else if (numOfSteps >= 2 && countedOpponentsToBeat != 1) {
+            } else if (numOfSteps == 2 && countedOpponentsToBeat != 1) {
+                return false;
+            } else if (numOfSteps > 2) {
                 return false;
             }
         }
@@ -156,51 +158,40 @@ public class Checkerboard implements Copier<Board> {
     }
 
     private long countAlliesToBeat(Pawn pawn, Position nextPosition) {
-        Position currentPosition = pawn.currentPosition();
-        int numOfSteps = numberOfMoves(currentPosition, nextPosition);
-        int horizontalDirection = horizontalDirection(currentPosition, nextPosition);
-        int verticalDirection = verticalDirection(currentPosition, nextPosition);
-
-        return IntStream.range(1, numOfSteps).mapToObj(getPawnFromBoard(pawn, horizontalDirection, verticalDirection))
-                .filter(Objects::nonNull)
+        return streamPawnMoves(pawn, nextPosition)
                 .filter(Rules.isOpponent(pawn).negate())
                 .limit(1)
                 .count();
     }
 
     private long countOpponentsToBeat(Pawn pawn, Position nextPosition) {
-        Position currentPosition = pawn.currentPosition();
-        int numOfSteps = numberOfMoves(currentPosition, nextPosition);
-        int horizontalDirection = horizontalDirection(currentPosition, nextPosition);
-        int verticalDirection = verticalDirection(currentPosition, nextPosition);
-
-        return IntStream.range(1, numOfSteps).mapToObj(getPawnFromBoard(pawn, horizontalDirection, verticalDirection))
-                .filter(Objects::nonNull)
+        return streamPawnMoves(pawn, nextPosition)
                 .filter(Rules.isOpponent(pawn))
                 .limit(2)
                 .count();
     }
 
     private Move pawnMove(Pawn pawn, Position nextPosition) {
-        Position currentPosition = pawn.currentPosition();
-        int stepsNum = numberOfMoves(currentPosition, nextPosition);
-        int xDirection = horizontalDirection(currentPosition, nextPosition);
-        int yDirection = verticalDirection(currentPosition, nextPosition);
-
-        return IntStream.range(1, stepsNum).mapToObj(getPawnFromBoard(pawn, xDirection, yDirection))
-                .filter(Objects::nonNull)
+        return streamPawnMoves(pawn, nextPosition)
                 .filter(Rules.isOpponent(pawn))
                 .findAny()
                 .map(p -> new Move(MoveType.KILL, p))
                 .orElse(new Move(MoveType.MOVE));
     }
 
-    private Predicate<Pawn> isNewKing() {
-        return Rules.isKing().negate().and(Rules.isLastRow());
+    private Stream<Pawn> streamPawnMoves(Pawn pawn, Position nextPosition) {
+        Position currentPosition = pawn.currentPosition();
+        int hDir = horizontalDirection(currentPosition, nextPosition);
+        int vDir = verticalDirection(currentPosition, nextPosition);
+
+        return Stream.iterate(currentPosition.increment(vDir, hDir), p -> !p.equals(nextPosition), p -> p.increment(vDir, hDir))
+                .limit(WIDTH)
+                .map(p -> board.getPawn(p))
+                .filter(Objects::nonNull);
     }
 
-    private IntFunction<Pawn> getPawnFromBoard(Pawn pawn, int xDir, int yDir) {
-        return (int i) -> board.getPawn(pawn.currentPosition().row() + i*yDir, pawn.currentPosition().column() + i*xDir);
+    private Predicate<Pawn> isNewKing() {
+        return Rules.isKing().negate().and(Rules.isLastRow());
     }
 
     private int numberOfMoves(Position currentPosition, Position nextPosition) {

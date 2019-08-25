@@ -43,6 +43,10 @@ public class Position extends Point implements Copier<Position> {
         return new Position(row() + normalize(-direction), column() + 1);
     }
 
+    public Position increment(int rDir, int cDir) {
+        return new Position(row() + normalize(rDir), column() +  + normalize(cDir));
+    }
+
     private int normalize(int v) {
         return Math.round(v/Math.abs(v));
     }
@@ -68,4 +72,11 @@ public class Position extends Point implements Copier<Position> {
         return (p, d) -> p.backwardRight(d);
     }
 
+    public boolean equals(Position o) {
+        if (o != null && (this.row() == o.row() && this.column() == o.column())) {
+            return true;
+        }
+
+        return false;
+    }
 }
