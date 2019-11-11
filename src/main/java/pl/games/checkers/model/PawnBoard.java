@@ -11,7 +11,7 @@ public class PawnBoard extends Board<Pawn> {
 
     public PawnBoard(Board pawns) {
         super(pawns.getHeight(), pawns.getWidth());
-        this.pawns = pawns.copy();
+        this.pawns = pawns.getPawnsCopy();
     }
 
     @Override

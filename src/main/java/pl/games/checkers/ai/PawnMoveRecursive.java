@@ -6,43 +6,66 @@ import pl.games.checkers.*;
 import pl.games.checkers.model.*;
 
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 import java.util.function.BiFunction;
+import java.util.stream.Collectors;
 
-
-public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
+public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PawnMoveRecursive.class);
+    private static final ForkJoinPool forkJoinPool = new ForkJoinPool(4);
 
     private static final int BEAT = 3;
     private static final int WALK = 1;
-    private static final int INVALID = -1;
+    private static final int INVALID = Integer.MIN_VALUE;
 
     private final Board pawnBoard;
     private final Pawn pawn;
     private final boolean fork;
 
-    public PawnMoveRecursive(Board pawnBoard, Pawn pawn) {
+    /**
+     * Method check moves in all directions and return the best one if exists even if is not acceptable by rules.
+     * @param pawn pawn to analyze
+     * @return best move if exists or null
+     */
+    public static List<MoveValue> getNextMoves(Board board, Pawn pawn) {
+        if (pawn != null) {
+            return forkJoinPool.invoke(new PawnMoveRecursive(board.copy(), pawn));
+        }
+        return null;
+    }
+
+    public static MoveValue getNextMove(Board board, Pawn pawn) {
+        return getNextMoves(board, pawn).stream()
+                .filter(Objects::nonNull)
+                .filter(mv -> mv.getScore() > 0)
+                .max(MoveValue.compareByScore())
+                .orElse(null);
+    }
+
+    private PawnMoveRecursive(Board pawnBoard, Pawn pawn) {
         this(pawnBoard, pawn, true);
     }
 
-    public PawnMoveRecursive(Board pawnBoard, Pawn pawn, boolean fork) {
+    private PawnMoveRecursive(Board pawnBoard, Pawn pawn, boolean fork) {
         this.pawnBoard = pawnBoard;
         this.pawn = pawn;
         this.fork = fork;
     }
 
     @Override
-    protected Map.Entry<Integer, Pawn> compute() {
+    protected List<MoveValue> compute() {
         if (fork) {
             return ForkJoinTask.invokeAll(createMovesOf(pawnBoard, pawn)).stream()
                     .map(ForkJoinTask::join)
-                    .max(Map.Entry.comparingByKey())
-                    .orElse(null);
+                    .flatMap(e -> e.stream())
+                    .filter(e -> e.getScore() >= 0)
+                    .collect(Collectors.toList());
         }
 
-        return getMove();
+        return List.of(getMove());
     }
 
     private List<PawnMoveRecursive> createMovesOf(Board board, Pawn pawn) {
@@ -56,7 +79,7 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
         return pawnMoveRecursives;
     }
 
-    private Map.Entry<Integer, Pawn> getMove() {
+    private MoveValue getMove() {
         if (pawnBoard.getPawn(pawn.nextPosition()) == null &&
                 Rules.isOnBoard().test(pawn.nextPosition())) {
             Position currentPosition = pawn.currentPosition();
@@ -64,14 +87,14 @@ public class PawnMoveRecursive extends RecursiveTask<Map.Entry<Integer, Pawn>> {
             boolean toward = yDirection == pawn.getType().getDirection();
 
             if (pawn.hasBeating()) {
-                return new AbstractMap.SimpleEntry<>(BEAT, pawn);
+                return MoveValue.create(pawn, BEAT);
             } else if (pawn.isKing()){
-                return new AbstractMap.SimpleEntry<>(WALK, pawn);
+                return MoveValue.create(pawn, WALK);
             } else if (toward) {
-                return new AbstractMap.SimpleEntry<>(WALK, pawn);
+                return MoveValue.create(pawn, WALK);
             }
         }
-        return new AbstractMap.SimpleEntry<>(INVALID, pawn);
+        return MoveValue.create(pawn, INVALID);
     }
 
     private List<PawnMoveRecursive> changePosition(Board pawnBoard, BiFunction<Position, Integer, Position> operation, Pawn pawn) {

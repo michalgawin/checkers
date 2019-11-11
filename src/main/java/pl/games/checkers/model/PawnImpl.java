@@ -14,7 +14,12 @@ public class PawnImpl implements Pawn {
     private Move move;
 
     public PawnImpl(PawnType type, Position position, boolean isKing, PawnFigure reference) {
-        move(position);
+        this(type, position, new Position(-1, -1), isKing, reference);
+    }
+
+    public PawnImpl(PawnType type, Position current, Position next, boolean isKing, PawnFigure reference) {
+        move(current);
+        this.nextPosition = next;
 
         this.type = type;
         this.reference = reference;
@@ -25,7 +30,7 @@ public class PawnImpl implements Pawn {
     }
 
     private PawnImpl(PawnImpl pawn) {
-        this(pawn.type, pawn.currentPosition(), pawn.isKing(), pawn.reference);
+        this(pawn.type, pawn.currentPosition(), pawn.nextPosition(), pawn.isKing(), pawn.reference);
     }
 
     @Override
@@ -96,6 +101,13 @@ public class PawnImpl implements Pawn {
 
     public void apply() {
         reference.move(currentPosition());
+    }
+
+    @Override
+    public String toString() {
+        return String.format("(%d, %d) -> (%d, %d)",
+                this.currentPosition.column(), this.currentPosition.row(),
+                this.nextPosition.column(), this.nextPosition.row());
     }
 
 }
