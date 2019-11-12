@@ -18,7 +18,7 @@ public class HeuristicRateTest {
 	public void checkInitialStateScore() {
 		Checkerboard checkerboard = new Checkerboard();
 		Rate rate = new HeuristicRate(checkerboard.getBoard(), PawnType.BLACK);
-		Assertions.assertEquals(rate.get(), INITIAL_SCORE, "Black & White scores are not equal");
+		Assertions.assertEquals(rate.rate(), INITIAL_SCORE, "Black & White scores are not equal");
 	}
 
 	@Test
@@ -26,7 +26,7 @@ public class HeuristicRateTest {
 		Checkerboard checkerboard = new Checkerboard();
 		Rate rateWhite = new HeuristicRate(checkerboard.getBoard(), PawnType.WHITE);
 		Rate rateBlack = new HeuristicRate(checkerboard.getBoard(), PawnType.BLACK);
-		Assertions.assertEquals(Math.abs(rateWhite.get()), rateBlack.get(), "Black & White scores are not equal");
+		Assertions.assertEquals(Math.abs(rateWhite.rate()), rateBlack.rate(), "Black & White scores are not equal");
 	}
 
 }
