@@ -6,7 +6,7 @@ import pl.games.checkers.model.PawnType;
 
 import java.util.Optional;
 
-public class HeuristicState implements State {
+public class HeuristicRate implements Rate {
 
 	private final int BEATING_SCORE = 10;
 	private final int KING_SCORE = 6;
@@ -14,14 +14,20 @@ public class HeuristicState implements State {
 	private final int POSITION_SCORE = 1;
 
 	private final Board board;
-	private Optional<Integer> score = Optional.empty();
+	private final PawnType pawnType;
+	private Optional<Integer> rate = Optional.empty();
 
-	public HeuristicState(final Board board) {
+	public HeuristicRate(final Board board, final PawnType pawnType) {
 		this.board = board.copy();
+		this.pawnType = pawnType;
 	}
 
-	@Override public Integer apply(final PawnType pawnType) {
-		return score.orElseGet(() -> summarizeAll(pawnType));
+	@Override public Integer rate() {
+		return rate.orElseGet(() -> summarizeAll(pawnType));
+	}
+
+	public PawnType getPawnType() {
+		return pawnType;
 	}
 
 	private int summarizeAll(final PawnType pawnType) {
@@ -37,7 +43,7 @@ public class HeuristicState implements State {
 				sum += s;
 			}
 		}
-		this.score = Optional.of(sum);
+		this.rate = Optional.of(sum);
 		return sum;
 	}
 
@@ -66,7 +72,7 @@ public class HeuristicState implements State {
 		if (pawn == null) {
 			return 0;
 		}
-		MoveValue bestMove = PawnMoveRecursive.getNextMove(board, pawn);
+		MoveRate bestMove = PawnMoveRecursive.getNextMove(board, pawn);
 		if (bestMove == null) {
 			return 0;
 		}

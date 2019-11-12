@@ -12,7 +12,7 @@ import java.util.concurrent.RecursiveTask;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
-public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
+public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PawnMoveRecursive.class);
     private static final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
@@ -30,18 +30,18 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
      * @param pawn pawn to analyze
      * @return best move if exists or null
      */
-    public static List<MoveValue> getNextMoves(Board board, Pawn pawn) {
+    public static List<MoveRate> getNextMoves(Board board, Pawn pawn) {
         if (pawn != null) {
             return forkJoinPool.invoke(new PawnMoveRecursive(board.copy(), pawn));
         }
         return List.of();
     }
 
-    public static MoveValue getNextMove(Board board, Pawn pawn) {
+    public static MoveRate getNextMove(Board board, Pawn pawn) {
         return getNextMoves(board, pawn).stream()
                 .filter(Objects::nonNull)
-                .filter(mv -> mv.getScore() > 0)
-                .max(MoveValue.compareByScore())
+                .filter(mv -> mv.rate() > 0)
+                .max(MoveRate.compareByScore())
                 .orElse(null);
     }
 
@@ -55,12 +55,12 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
         this.fork = fork;
     }
 
-    @Override protected List<MoveValue> compute() {
+    @Override protected List<MoveRate> compute() {
         if (fork) {
             return ForkJoinTask.invokeAll(createMovesOf(pawnBoard, pawn)).stream()
                     .map(ForkJoinTask::join)
                     .flatMap(e -> e.stream())
-                    .filter(e -> e.getScore() >= 0)
+                    .filter(e -> e.rate() >= 0)
                     .collect(Collectors.toList());
         }
 
@@ -78,7 +78,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
         return pawnMoveRecursives;
     }
 
-    private MoveValue getMove() {
+    private MoveRate getMove() {
         if (pawnBoard.getPawn(pawn.nextPosition()) == null &&
                 Rules.isOnBoard().test(pawn.nextPosition())) {
             Position currentPosition = pawn.currentPosition();
@@ -86,14 +86,14 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
             boolean toward = yDirection == pawn.getType().getDirection();
 
             if (pawn.hasBeating()) {
-                return MoveValue.create(pawn, BEAT);
+                return MoveRate.create(pawn, BEAT);
             } else if (pawn.isKing()){
-                return MoveValue.create(pawn, WALK);
+                return MoveRate.create(pawn, WALK);
             } else if (toward) {
-                return MoveValue.create(pawn, WALK);
+                return MoveRate.create(pawn, WALK);
             }
         }
-        return MoveValue.create(pawn, INVALID);
+        return MoveRate.create(pawn, INVALID);
     }
 
     private List<PawnMoveRecursive> changePosition(Board pawnBoard, BiFunction<Position, Integer, Position> operation, Pawn pawn) {

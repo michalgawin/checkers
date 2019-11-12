@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class HeuristicStateTest {
+public class HeuristicRateTest {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameTreeTest.class);
 
@@ -17,16 +17,16 @@ public class HeuristicStateTest {
 	@Test
 	public void checkInitialStateScore() {
 		Checkerboard checkerboard = new Checkerboard();
-		State state = new HeuristicState(checkerboard.getBoard());
-		Assertions.assertEquals(state.apply(PawnType.BLACK), INITIAL_SCORE, "Black & White scores are not equal");
+		Rate rate = new HeuristicRate(checkerboard.getBoard(), PawnType.BLACK);
+		Assertions.assertEquals(rate.get(), INITIAL_SCORE, "Black & White scores are not equal");
 	}
 
 	@Test
 	public void checkInitialStatesAreEqual() {
 		Checkerboard checkerboard = new Checkerboard();
-		State stateWhite = new HeuristicState(checkerboard.getBoard());
-		State stateBlack = new HeuristicState(checkerboard.getBoard());
-		Assertions.assertEquals(Math.abs(stateWhite.apply(PawnType.WHITE)), stateBlack.apply(PawnType.BLACK), "Black & White scores are not equal");
+		Rate rateWhite = new HeuristicRate(checkerboard.getBoard(), PawnType.WHITE);
+		Rate rateBlack = new HeuristicRate(checkerboard.getBoard(), PawnType.BLACK);
+		Assertions.assertEquals(Math.abs(rateWhite.get()), rateBlack.get(), "Black & White scores are not equal");
 	}
 
 }

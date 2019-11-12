@@ -24,7 +24,7 @@ public class Minimax implements NextMove {
 		}
 
 		if (null == max.getValue()) { // leaf
-			return new AbstractMap.SimpleEntry<>(gameTree.score(), gameTree);
+			return new AbstractMap.SimpleEntry<>(gameTree.rate(), gameTree);
 		}
 
 		return max;
@@ -41,7 +41,7 @@ public class Minimax implements NextMove {
 		}
 
 		if (null == min.getValue()) { // leaf
-			return new AbstractMap.SimpleEntry<>(gameTree.score(), gameTree);
+			return new AbstractMap.SimpleEntry<>(gameTree.rate(), gameTree);
 		}
 
 		return min;

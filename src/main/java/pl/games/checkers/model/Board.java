@@ -3,7 +3,7 @@ package pl.games.checkers.model;
 import pl.games.checkers.Copier;
 import pl.games.checkers.Rules;
 import pl.games.checkers.ai.GameTree;
-import pl.games.checkers.ai.MoveValue;
+import pl.games.checkers.ai.MoveRate;
 import pl.games.checkers.ai.PawnMoveRecursive;
 import pl.games.checkers.ai.algorithm.Minimax;
 import pl.games.checkers.ai.algorithm.NextMove;
@@ -139,7 +139,7 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         case KILL:
             board.beat(pawn, result.killedPawn(), currentPosition, nextPosition);
 
-            MoveValue bestMove = PawnMoveRecursive.getNextMove(board, pawn);
+            MoveRate bestMove = PawnMoveRecursive.getNextMove(board, pawn);
             if (bestMove != null && bestMove.getPawn().hasBeating()) {
                 Pawn p = bestMove.getPawn();
                 isAi = move(board, this.getPawn(p.currentPosition()), p.nextPosition(), isAi);

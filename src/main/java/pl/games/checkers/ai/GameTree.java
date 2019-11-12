@@ -19,17 +19,16 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class GameTree extends RecursiveAction implements Iterable<GameTree> {
+public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rate {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(GameTree.class);
 	private static final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
 	private final int deepness;
 	private final Board board;
-	private final PawnType pawnType; //specifies turn
 	private final Pawn pawn; //specifies pawn move
 	private final List<GameTree> nodes = new LinkedList<>(); //possible states after moves
-	private final HeuristicState heuristicState;
+	private final HeuristicRate heuristicRate;
 
 	public GameTree(final Board board, final PawnType pawnType, int deepness) {
 		this(board, pawnType, null, deepness);
@@ -37,9 +36,8 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree> {
 
 	public GameTree(final Board board, final PawnType pawnType, final Pawn pawn, int deepness) {
 		this.board = board.copy();
-		this.pawnType = pawnType;
 		this.pawn = pawn == null ? null : pawn;
-		this.heuristicState = new HeuristicState(board);
+		this.heuristicRate = new HeuristicRate(board, pawnType);
 		this.deepness = deepness;
 	}
 
@@ -62,8 +60,8 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree> {
 		nodes.forEach(action);
 	}
 
-	public Integer score() {
-		return heuristicState.apply(this.pawnType);
+	@Override public Integer rate() {
+		return heuristicRate.rate();
 	}
 
 	public Pawn getPawn() {
@@ -75,7 +73,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree> {
 	}
 
 	public PawnType getPawnType() {
-		return pawnType;
+		return heuristicRate.getPawnType();
 	}
 
 	private List<GameTree> build() {
@@ -87,7 +85,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree> {
 		for (int y = 0; y < board.getHeight(); y++) {
 			for (int x = 0; x < board.getWidth(); x++) {
 				Pawn pawn = board.getPawn(y, x);
-				if (pawn != null && pawn.getType() == pawnType) {
+				if (pawn != null && pawn.getType() == getPawnType()) {
 					pawnList.add(pawn);
 				}
 			}
@@ -114,7 +112,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree> {
 
 		List<Pawn> pawnNextMoves = PawnMoveRecursive.getNextMoves(board, pawn).stream()
 				.filter(Objects::nonNull)
-				.map(MoveValue::getPawn)
+				.map(MoveRate::getPawn)
 				.filter(Objects::nonNull)
 				.collect(Collectors.toList());
 
@@ -143,7 +141,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree> {
 	 * @return added child
 	 */
 	private GameTree addNode(Board board, Pawn pawn) {
-		GameTree gameTree = new GameTree(board, this.pawnType.negate(), pawn, deepness - 1);
+		GameTree gameTree = new GameTree(board, getPawnType().negate(), pawn, deepness - 1);
 		this.nodes.add(gameTree);
 		return gameTree;
 	}
