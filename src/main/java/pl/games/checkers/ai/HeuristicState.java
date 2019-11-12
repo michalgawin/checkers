@@ -9,7 +9,8 @@ import java.util.Optional;
 public class HeuristicState implements State {
 
 	private final int BEATING_SCORE = 10;
-	private final int KING_SCORE = 5;
+	private final int KING_SCORE = 6;
+	private final int SCORE_FOR_PAWN = 5;
 	private final int POSITION_SCORE = 1;
 
 	private final Board board;
@@ -28,7 +29,7 @@ public class HeuristicState implements State {
 		for (int y = 0; y < board.getHeight(); y++) {
 			for (int x = 0; x < board.getWidth(); x++) {
 				Pawn pawn = board.getPawn(y, x);
-				int s = 0;
+				int s = SCORE_FOR_PAWN;
 				s += scoreForPosition(pawn);
 				s += scoreForKing(pawn);
 				s += hasBeating(board, pawn);
@@ -47,9 +48,9 @@ public class HeuristicState implements State {
 		}
 		int scoreForColumn = (pawn.currentPosition().column() > 1 && pawn.currentPosition().column() < 6) ? 2 : 1;
 		if (pawn.getType().getDirection() > 0) {
-			scoreForRow = pawn.currentPosition().row() * POSITION_SCORE;
+			scoreForRow = (pawn.currentPosition().row() + 1) * POSITION_SCORE;
 		} else {
-			scoreForRow = (7 - pawn.currentPosition().row()) * POSITION_SCORE;
+			scoreForRow = (8 - pawn.currentPosition().row()) * POSITION_SCORE;
 		}
 		return scoreForColumn + scoreForRow;
 	}

@@ -82,7 +82,7 @@ public class PawnImpl implements Pawn {
 
     @Override
     public boolean hasBeating() {
-        return move.type() == MoveType.KILL;
+        return move != null && move.type() == MoveType.KILL;
     }
 
     @Override

@@ -15,7 +15,7 @@ import java.util.stream.Collectors;
 public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(PawnMoveRecursive.class);
-    private static final ForkJoinPool forkJoinPool = new ForkJoinPool(4);
+    private static final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     private static final int BEAT = 3;
     private static final int WALK = 1;
@@ -34,7 +34,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
         if (pawn != null) {
             return forkJoinPool.invoke(new PawnMoveRecursive(board.copy(), pawn));
         }
-        return null;
+        return List.of();
     }
 
     public static MoveValue getNextMove(Board board, Pawn pawn) {
@@ -55,8 +55,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveValue>> {
         this.fork = fork;
     }
 
-    @Override
-    protected List<MoveValue> compute() {
+    @Override protected List<MoveValue> compute() {
         if (fork) {
             return ForkJoinTask.invokeAll(createMovesOf(pawnBoard, pawn)).stream()
                     .map(ForkJoinTask::join)

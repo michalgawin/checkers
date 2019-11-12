@@ -5,6 +5,8 @@ import pl.games.checkers.Rules;
 import pl.games.checkers.ai.GameTree;
 import pl.games.checkers.ai.MoveValue;
 import pl.games.checkers.ai.PawnMoveRecursive;
+import pl.games.checkers.ai.algorithm.Minimax;
+import pl.games.checkers.ai.algorithm.NextMove;
 
 import java.util.Objects;
 import java.util.function.Predicate;
@@ -19,6 +21,7 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
     public static final int DEEPNESS = 6;
     private final int width;
     private final int height;
+    private final NextMove algorithm = new Minimax(); //new SimplyBest();
 
     public Board(int height, int width) {
         this.height = height;
@@ -150,7 +153,9 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         }
 
         if (!isAi && result.type() != MoveType.INVALID) {// AI turn if user made a move
-            Pawn p = new GameTree(board, pawn.getType().negate()).getBestMoveOfPawn(DEEPNESS);
+            GameTree gameTree = new GameTree(board, pawn.getType().negate(), DEEPNESS)
+                    .buildTree();
+            Pawn p = algorithm.nextMove(gameTree);
             if (p != null && wasAi == isAi) {
                 move(board, this.getPawn(p.currentPosition()), p.nextPosition(), !isAi);
             }
