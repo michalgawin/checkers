@@ -27,6 +27,9 @@ repositories {
 
 dependencies {
     implementation 'org.slf4j:slf4j-api:1.7.22'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.2.3'
+    implementation group: 'ch.qos.logback', name: 'logback-core', version: '1.2.3'
+
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.5.2'
     testImplementation 'org.junit.jupiter:junit-jupiter-engine:5.5.2'
 }

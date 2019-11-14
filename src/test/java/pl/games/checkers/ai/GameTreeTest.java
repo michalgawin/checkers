@@ -9,12 +9,8 @@ import java.util.Iterator;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class GameTreeTest {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameTreeTest.class);
 
 	private static final int DEEPNESS = 2;
 

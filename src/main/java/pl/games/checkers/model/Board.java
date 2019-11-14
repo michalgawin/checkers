@@ -3,8 +3,6 @@ package pl.games.checkers.model;
 import pl.games.checkers.Copier;
 import pl.games.checkers.Rules;
 import pl.games.checkers.ai.GameTree;
-import pl.games.checkers.ai.MoveRate;
-import pl.games.checkers.ai.PawnMoveRecursive;
 import pl.games.checkers.ai.algorithm.Minimax;
 import pl.games.checkers.ai.algorithm.NextMove;
 
@@ -116,8 +114,9 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         return this;
     }
 
-    public void move(T pawn, Position nextPosition) {
-        move(this, pawn, nextPosition, false);
+    public Board<T> move(T pawn, Position nextPosition, boolean isAi) {
+        move(this, pawn, nextPosition, isAi);
+        return this;
     }
 
     /**
@@ -139,9 +138,12 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         case KILL:
             board.beat(pawn, result.killedPawn(), currentPosition, nextPosition);
 
-            MoveRate bestMove = PawnMoveRecursive.getNextMove(board, pawn);
-            if (bestMove != null && bestMove.getPawn().hasBeating()) {
-                Pawn p = bestMove.getPawn();
+            GameTree gameTree = new GameTree(board, pawn.getType())
+                    .constraint(pawn)
+                    .buildTree();
+            Pawn bestMove = algorithm.nextMove(gameTree);
+            if (bestMove != null && bestMove.hasBeating()) {
+                Pawn p = bestMove;
                 isAi = move(board, this.getPawn(p.currentPosition()), p.nextPosition(), isAi);
             }
 
@@ -157,13 +159,11 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
                     .buildTree();
             Pawn p = algorithm.nextMove(gameTree);
             if (p != null && wasAi == isAi) {
-                move(board, this.getPawn(p.currentPosition()), p.nextPosition(), !isAi);
+                isAi = move(board, this.getPawn(p.currentPosition()), p.nextPosition(), !isAi);
             }
-
-            return true;
         }
 
-        return false;
+        return isAi;
     }
 
     private Move getPawnMove(T pawn, Position nextPosition) {

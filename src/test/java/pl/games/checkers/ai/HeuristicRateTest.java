@@ -5,12 +5,8 @@ import pl.games.checkers.ui.Checkerboard;
 
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class HeuristicRateTest {
-
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameTreeTest.class);
 
 	private static final int INITIAL_SCORE = 0;
 

@@ -46,7 +46,7 @@ public class Checkerboard {
     }
 
     private void move(Board board, Pawn pawn, Position nextPosition) {
-        board.move(pawn, nextPosition);
+        board.move(pawn, nextPosition, false);
     }
 
 }

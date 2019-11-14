@@ -1,7 +1,5 @@
 package pl.games.checkers.ai;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import pl.games.checkers.*;
 import pl.games.checkers.model.*;
 
@@ -14,7 +12,6 @@ import java.util.stream.Collectors;
 
 public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(PawnMoveRecursive.class);
     private static final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 
     private static final int BEAT = 3;
@@ -105,11 +102,11 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
              position = operation.apply(position, direction)
         ) {
             Pawn p = pawn.copy();
-            PawnMoveRecursive pawnMoveRecursive = changePosition(new PawnBoard(pawnBoard), p, position, operation);
-            if (pawnMoveRecursive != null) {
-                pawnMoveRecursives.add(pawnMoveRecursive);
-            } else {
+            List<PawnMoveRecursive> pawnMoveRecursiveList = changePosition(new PawnBoard(pawnBoard), p, position, operation);
+            if (pawnMoveRecursiveList.isEmpty()) {
                 break;
+            } else {
+                pawnMoveRecursives.addAll(pawnMoveRecursiveList);
             }
 
             if (!p.isKing()) { //one move for not king
@@ -120,7 +117,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
         return pawnMoveRecursives;
     }
 
-    private PawnMoveRecursive changePosition(Board pawnBoard, Pawn p, Position position, BiFunction<Position, Integer, Position> operation) {
+    private List<PawnMoveRecursive> changePosition(Board pawnBoard, Pawn p, Position position, BiFunction<Position, Integer, Position> operation) {
         int direction = p.getType().getDirection();
         p.nextPosition(position);
 
@@ -131,29 +128,32 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
         int yDirection = Integer.compare(p.nextPosition().row(), p.currentPosition().row());
         boolean toward = yDirection == p.getType().getDirection();
 
+        List<PawnMoveRecursive> pawnMoveRecursiveList = new ArrayList<>();
+
         if (pawnBoard.getPawn(p.nextPosition()) == null) {
             if (toward) {
                 p.setMove(new Move(MoveType.MOVE));
-                return new PawnMoveRecursive(pawnBoard, p, false);
+                pawnMoveRecursiveList.add(new PawnMoveRecursive(pawnBoard, p, false));
             } else if (p.isKing()) {
                 p.setMove(new Move(MoveType.MOVE));
-                return new PawnMoveRecursive(pawnBoard, p, false);
+                pawnMoveRecursiveList.add(new PawnMoveRecursive(pawnBoard, p, false));
             }
-
-            return null;
         } else if (Rules.isOpponent(pawnBoard.getPawn(p.nextPosition())).test(p)) { //check killing
             Pawn victim = pawnBoard.getPawn(p.nextPosition());
-            p.nextPosition(operation.apply(p.nextPosition(), direction));
-            if (Rules.isOnBoard().negate().test(p.nextPosition())) {
-                return null;
-            }
-            if (pawnBoard.getPawn(p.nextPosition()) == null) {
-                p.setMove(new Move(MoveType.KILL, victim));
-                return new PawnMoveRecursive(pawnBoard, p, false);
+            p.setMove(new Move(MoveType.KILL, victim));
+            for (p.nextPosition(operation.apply(p.nextPosition(), direction));
+                 Rules.isOnBoard().test(p.nextPosition()) && pawnBoard.getPawn(p.nextPosition()) == null;
+                 p.nextPosition(operation.apply(p.nextPosition(), direction))
+            ) {
+                pawnMoveRecursiveList.add(new PawnMoveRecursive(new PawnBoard(pawnBoard), p.copy(), false));
+
+                if (!p.isKing()) { //one move for not king
+                    break;
+                }
             }
         }
 
-        return null;
+        return pawnMoveRecursiveList;
     }
 
 }

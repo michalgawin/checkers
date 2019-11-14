@@ -19,7 +19,7 @@ public class Minimax implements NextMove {
 		for (GameTree child : gameTree) {
 			Map.Entry<Integer, GameTree> current = min(child);
 			if (current.getKey() > max.getKey()) {
-				max = new AbstractMap.SimpleEntry<>(max.getKey(), child);
+				max = new AbstractMap.SimpleEntry<>(current.getKey(), child);
 			}
 		}
 
@@ -36,7 +36,7 @@ public class Minimax implements NextMove {
 		for (GameTree child : gameTree) {
 			Map.Entry<Integer, GameTree> current = max(child);
 			if (current.getKey() < min.getKey()) {
-				min = new AbstractMap.SimpleEntry<>(min.getKey(), child);
+				min = new AbstractMap.SimpleEntry<>(current.getKey(), child);
 			}
 		}
 
