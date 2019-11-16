@@ -9,7 +9,7 @@ import java.util.Optional;
 public class HeuristicRate implements Rate {
 
 	private final int BEATING_SCORE = 10;
-	private final int KING_SCORE = 6;
+	private final int KING_SCORE = 10;
 	private final int SCORE_FOR_PAWN = 5;
 	private final int POSITION_SCORE = 1;
 
