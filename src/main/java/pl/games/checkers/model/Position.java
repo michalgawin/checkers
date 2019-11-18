@@ -28,23 +28,23 @@ public class Position extends Point implements Copier<Position> {
     }
 
     public Position towardLeft(int direction) {
-        return new Position(row() + normalize(direction), column() - 1);
+        return increment(direction, -1);
     }
 
     public Position towardRight(int direction) {
-        return new Position(row() + normalize(direction), column() + 1);
+        return increment(direction, 1);
     }
 
     public Position backwardLeft(int direction) {
-        return new Position(row() + normalize(-direction), column() - 1);
+        return increment(-direction, -1);
     }
 
     public Position backwardRight(int direction) {
-        return new Position(row() + normalize(-direction), column() + 1);
+        return increment(-direction, 1);
     }
 
     public Position increment(int rDir, int cDir) {
-        return new Position(row() + normalize(rDir), column() +  + normalize(cDir));
+        return new Position(row() + normalize(rDir), column() + normalize(cDir));
     }
 
     private int normalize(int v) {
