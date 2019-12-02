@@ -1,17 +1,21 @@
 package pl.games.checkers.model;
 
+import java.util.List;
+
 public class PawnBoard extends Board<Pawn> {
 
     private final Pawn[][] pawns;
 
-    public PawnBoard(int height, int width) {
-        super(height, width);
-        this.pawns = new Pawn[height][width];
+    public PawnBoard(Board pawns) {
+        this(pawns.getHeight(), pawns.getWidth(), pawns.pawnsAsList());
     }
 
-    public PawnBoard(Board pawns) {
-        super(pawns.getHeight(), pawns.getWidth());
-        this.pawns = pawns.getPawnsCopy();
+    public PawnBoard(int height, int width, List<Pawn> pawnList) {
+        super(height, width);
+        this.pawns = new Pawn[height][width];
+        pawnList.stream()
+                .map(p -> p.copy())
+                .forEach(pawn -> setPawn(pawn.currentPosition(), pawn));
     }
 
     @Override

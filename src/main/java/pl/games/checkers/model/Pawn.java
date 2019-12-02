@@ -2,7 +2,7 @@ package pl.games.checkers.model;
 
 import pl.games.checkers.Copier;
 
-public interface Pawn extends Copier<Pawn> {
+public interface Pawn<T extends Pawn> extends Copier<T> {
 
     PawnType getType();
 
@@ -29,6 +29,6 @@ public interface Pawn extends Copier<Pawn> {
     void abortMove();
 
     @Override
-    Pawn copy();
+    T copy();
 
 }

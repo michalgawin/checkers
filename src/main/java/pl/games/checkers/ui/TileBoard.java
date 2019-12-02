@@ -86,8 +86,7 @@ public class TileBoard extends Board<PawnFigure> {
 
         if (row <= 2) {
             pawnType = PawnType.BLACK;
-        }
-        if (row >= 5) {
+        } else if (row >= 5) {
             pawnType = PawnType.WHITE;
         }
 

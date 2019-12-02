@@ -7,13 +7,13 @@ import java.util.Comparator;
 public class MoveRate implements Rate {
 
 	private final Pawn pawn;
-	private final Integer rate;
+	private final Long rate;
 
 	public static MoveRate create(Pawn pawn, int rate) {
 		return new MoveRate(pawn, rate);
 	}
 
-	private MoveRate(Pawn pawn, int rate) {
+	private MoveRate(Pawn pawn, long rate) {
 		assert rate <= 0 || (rate > 0 && pawn != null);
 		this.pawn = pawn;
 		this.rate = rate;
@@ -23,7 +23,7 @@ public class MoveRate implements Rate {
 		return pawn;
 	}
 
-	@Override public Integer rate() {
+	@Override public Long rate() {
 		return rate;
 	}
 
