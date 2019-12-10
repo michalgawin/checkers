@@ -6,8 +6,12 @@ import pl.games.checkers.ai.GameTree;
 import pl.games.checkers.ai.algorithm.Minimax;
 import pl.games.checkers.ai.algorithm.NextMove;
 
+import java.util.List;
 import java.util.Objects;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -54,60 +58,27 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         return height;
     }
 
-    /**
-     *
-     * @param currentPosition
-     * @return
-     */
+    @Override
+    public Board copy() {
+        return new PawnBoard(this);
+    }
+
     public Board removePawn(Position currentPosition) {
         return setPawn(currentPosition, null);
     }
 
-    public Board beat(T pawn, T beat, Position currentPosition, Position nextPosition) {
+    public Board beatPawn(T pawn, T beat, Position currentPosition, Position nextPosition) {
         removePawn(beat.currentPosition());
-        move(pawn, currentPosition, nextPosition);
+        movePawn(pawn, currentPosition, nextPosition);
         return this;
     }
 
-    public Board abortMove(Pawn pawn) {
+    public Board abortPawnMove(Pawn pawn) {
         pawn.abortMove();
         return this;
     }
 
-    public Pawn[][] getPawnsCopy() {
-        Pawn[][] pawnsCopy = new Pawn[getHeight()][getWidth()];
-
-        for (int row = 0; row < getHeight(); row++) {
-            for (int col = 0; col < getWidth(); col++) {
-                if (getPawn(row, col) != null) {
-                    pawnsCopy[row][col] = getPawn(row, col).copy();
-                } else {
-                    pawnsCopy[row][col] = null;
-                }
-            }
-        }
-
-        return pawnsCopy;
-    }
-
-    @Override
-    public Board copy() {
-        Board board = new PawnBoard(getHeight(), getWidth());
-
-        for (int row = 0; row < this.getHeight(); row++) {
-            for (int col = 0; col < this.getWidth(); col++) {
-                if (this.isNotEmpty(row, col)) {
-                    board.setPawn(row, col, this.getPawn(row, col).copy());
-                } else {
-                    board.setPawn(row, col, null);
-                }
-            }
-        }
-
-        return board;
-    }
-
-    public Board move(T pawn, Position currentPosition, Position nextPosition) {
+    public Board movePawn(T pawn, Position currentPosition, Position nextPosition) {
         pawn.move(nextPosition);
         setPawn(currentPosition, null);
         setPawn(nextPosition, pawn);
@@ -130,13 +101,13 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         result = getPawnMove(pawn, nextPosition);
         switch (result.type()) {
         case INVALID:
-            board.abortMove(pawn);
+            board.abortPawnMove(pawn);
             break;
         case MOVE:
-            board.move(pawn, currentPosition, nextPosition);
+            board.movePawn(pawn, currentPosition, nextPosition);
             break;
         case KILL:
-            board.beat(pawn, result.killedPawn(), currentPosition, nextPosition);
+            board.beatPawn(pawn, result.killedPawn(), currentPosition, nextPosition);
 
             GameTree gameTree = new GameTree(board, pawn.getType())
                     .constraint(pawn)
@@ -166,6 +137,20 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         return isAi;
     }
 
+    public List<T> pawnsAsList() {
+        Function<Integer, List<T>> getFromRow = row -> IntStream.range(0, getWidth())
+                .mapToObj(col -> getPawn(row, col))
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+
+        List<T> pawns = IntStream.range(0, getHeight())
+                .mapToObj(row -> getFromRow.apply(row))
+                .flatMap(pawnsRow -> pawnsRow.stream())
+                .collect(Collectors.toList());
+
+        return pawns;
+    }
+
     private Move getPawnMove(T pawn, Position nextPosition) {
         if (isValidMoveOnBoard(pawn, nextPosition) && isValidMovePawn(pawn, nextPosition)) {
             return pawnMove(pawn, nextPosition);
@@ -188,7 +173,7 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
             return false;
         } else if (!pawn.isKing()) {
             Position currentPosition = pawn.currentPosition();
-            int numOfSteps = numberOfMoves(currentPosition, nextPosition);
+            int numOfSteps = countPositionChanges(currentPosition, nextPosition);
             int verticalDirection = verticalDirection(currentPosition, nextPosition);
             boolean toward = verticalDirection == pawn.getType().getDirection();
 
@@ -229,7 +214,7 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
         return Rules.isKing().negate().and(Rules.isLastRow());
     }
 
-    private int numberOfMoves(Position currentPosition, Position nextPosition) {
+    private int countPositionChanges(Position currentPosition, Position nextPosition) {
         int colDiff = Math.abs(nextPosition.column() - currentPosition.column());
         assert colDiff == Math.abs(nextPosition.row() - currentPosition.row());
 

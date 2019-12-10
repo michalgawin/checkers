@@ -104,10 +104,6 @@ public class PawnImpl implements Pawn {
         return new PawnImpl(this);
     }
 
-    public void apply() {
-        reference.move(currentPosition());
-    }
-
     @Override
     public String toString() {
         return String.format("(%d, %d) -> (%d, %d)",

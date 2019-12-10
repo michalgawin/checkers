@@ -72,7 +72,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 		nodes.forEach(action);
 	}
 
-	@Override public Integer rate() {
+	@Override public Long rate() {
 		return heuristicRate.rate();
 	}
 
@@ -93,23 +93,21 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 			return List.of();
 		}
 
-		List<Pawn> pawnList = new ArrayList<>();
+		final List<Pawn> pawnList = new ArrayList<>();
 		if (constraint.isPresent()) {
 			pawnList.add(constraint.get().copy());
 		} else {
-			for (int y = 0; y < board.getHeight(); y++) {
-				for (int x = 0; x < board.getWidth(); x++) {
-					Pawn pawn = board.getPawn(y, x);
-					if (pawn != null && pawn.getType() == getPawnType()) {
-						pawnList.add(pawn);
-					}
-				}
-			}
+			board.pawnsAsList().stream()
+					.filter(Objects::nonNull)
+					.filter(p -> ((Pawn) p).getType() == getPawnType())
+					.forEach(p -> pawnList.add((Pawn) p));
 		}
 
 		boolean beating = false;
 		for (Pawn pawn : pawnList) {
-			beating = updateNodes(beating, this.board.copy(), pawn);
+			if (updateNodes(beating, this.board.copy(), pawn)) {
+				beating = true;
+			}
 		}
 
 		return nodes;
@@ -122,7 +120,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 	 * @param pawn the pawn of which moves will be analyzed
 	 */
 	private boolean updateNodes(boolean beating, Board board, Pawn pawn) {
-		List<Pawn> pawnNextMoves = PawnMoveRecursive.getNextMoves(board, pawn).stream()
+		List<Pawn> pawnNextMoves = PawnMoveRecursive.getNextMoves(board.copy(), pawn).stream()
 				.filter(Objects::nonNull)
 				.map(MoveRate::getPawn)
 				.filter(Objects::nonNull)
@@ -143,10 +141,10 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 			if (!beating || (beating && pawnNext.hasBeating())) {
 				Pawn copy = pawnNext.copy();
 				LOGGER.debug("{}>> move: {}", "=".repeat(depth), pawnNext);
-				addNode(board.move(pawnNext, pawnNext.nextPosition(), true), copy);
+				addNode(board.copy().move(pawnNext, pawnNext.nextPosition(), true), copy);
 			}
 		}
-		return beating;
+		return beating && hasBeating;
 	}
 
 	/**
@@ -154,7 +152,13 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 	 * @return added child
 	 */
 	private GameTree addNode(Board board, Pawn pawn) {
-		GameTree gameTree = new GameTree(board, getPawnType().negate(), pawn, depth - 1);
+		GameTree gameTree;
+		if (pawn.hasBeating()) {
+			gameTree = new GameTree(board, getPawnType(), pawn, depth - 1);
+		} else {
+			gameTree = new GameTree(board, getPawnType().negate(), pawn, depth - 1);
+		}
+		gameTree.rate();
 		this.nodes.add(gameTree);
 		return gameTree;
 	}

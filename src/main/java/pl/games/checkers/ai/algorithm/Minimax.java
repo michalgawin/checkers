@@ -3,48 +3,63 @@ package pl.games.checkers.ai.algorithm;
 import pl.games.checkers.ai.GameTree;
 import pl.games.checkers.model.Pawn;
 
-import java.util.AbstractMap;
-import java.util.Map;
-
 public class Minimax implements NextMove {
 
 	@Override
 	public Pawn nextMove(final GameTree gameTree) {
-		return max(gameTree).getValue().getPawn();
+		return max(gameTree).getPawn();
 	}
 
-	private Map.Entry<Integer, GameTree> max(GameTree gameTree) {
-		Map.Entry<Integer, GameTree> max = new AbstractMap.SimpleEntry<>(Integer.MIN_VALUE, null);
+	private GameTree max(GameTree gameTree) {
+		Long max = Long.MIN_VALUE;
+		GameTree maxGameTree = null;
 
 		for (GameTree child : gameTree) {
-			Map.Entry<Integer, GameTree> current = min(child);
-			if (current.getKey() > max.getKey()) {
-				max = new AbstractMap.SimpleEntry<>(current.getKey(), child);
+			GameTree current;
+
+			if (child.getPawnType() == gameTree.getPawnType()) {
+				current = max(child);
+			} else {
+				current = min(child);
+			}
+
+			if (current.rate() > max) {
+				max = current.rate();
+				maxGameTree = child;
 			}
 		}
 
-		if (null == max.getValue()) { // leaf
-			return new AbstractMap.SimpleEntry<>(gameTree.rate(), gameTree);
+		if (null == maxGameTree) { // leaf
+			maxGameTree = gameTree;
 		}
 
-		return max;
+		return maxGameTree;
 	}
 
-	private Map.Entry<Integer, GameTree> min(GameTree gameTree) {
-		Map.Entry<Integer, GameTree> min = new AbstractMap.SimpleEntry<>(Integer.MAX_VALUE, null);
+	private GameTree min(GameTree gameTree) {
+		Long min = Long.MAX_VALUE;
+		GameTree minGameTree = null;
 
 		for (GameTree child : gameTree) {
-			Map.Entry<Integer, GameTree> current = max(child);
-			if (current.getKey() < min.getKey()) {
-				min = new AbstractMap.SimpleEntry<>(current.getKey(), child);
+			GameTree current;
+
+			if (child.getPawnType() == gameTree.getPawnType()) {
+				current = min(child);
+			} else {
+				current = max(child);
+			}
+
+			if (current.rate() < min) {
+				min = current.rate();
+				minGameTree = child;
 			}
 		}
 
-		if (null == min.getValue()) { // leaf
-			return new AbstractMap.SimpleEntry<>(gameTree.rate(), gameTree);
+		if (null == minGameTree) { // leaf
+			minGameTree = gameTree;
 		}
 
-		return min;
+		return minGameTree;
 	}
 
 }
