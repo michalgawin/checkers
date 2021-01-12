@@ -7,25 +7,28 @@ public class Minimax implements NextMove {
 
 	@Override
 	public Pawn nextMove(final GameTree gameTree) {
-		return max(gameTree).getPawn();
+		return max(gameTree, Long.MIN_VALUE, Long.MAX_VALUE).getPawn();
 	}
 
-	private GameTree max(GameTree gameTree) {
-		Long max = Long.MIN_VALUE;
+	private GameTree max(GameTree gameTree, long alpha, long beta) {
 		GameTree maxGameTree = null;
 
 		for (GameTree child : gameTree) {
 			GameTree current;
 
-			if (child.getPawnType() == gameTree.getPawnType()) {
-				current = max(child);
+			if (child.getPawnType() == gameTree.getPawnType()) { //beating
+				current = max(child, alpha, beta);
 			} else {
-				current = min(child);
+				current = min(child, alpha, beta);
 			}
 
-			if (current.rate() > max) {
-				max = current.rate();
+			if (current.rate() > alpha) {
+				alpha = current.rate();
 				maxGameTree = child;
+
+				if (alpha >= beta) { //stop analyzing this subtree
+					break;
+				}
 			}
 		}
 
@@ -36,22 +39,25 @@ public class Minimax implements NextMove {
 		return maxGameTree;
 	}
 
-	private GameTree min(GameTree gameTree) {
-		Long min = Long.MAX_VALUE;
+	private GameTree min(GameTree gameTree, long alpha, long beta) {
 		GameTree minGameTree = null;
 
 		for (GameTree child : gameTree) {
 			GameTree current;
 
-			if (child.getPawnType() == gameTree.getPawnType()) {
-				current = min(child);
+			if (child.getPawnType() == gameTree.getPawnType()) { //beating
+				current = min(child, alpha, beta);
 			} else {
-				current = max(child);
+				current = max(child, alpha, beta);
 			}
 
-			if (current.rate() < min) {
-				min = current.rate();
+			if (current.rate() < beta) { //stop analyzing this subtree
+				beta = current.rate();
 				minGameTree = child;
+
+				if (beta <= alpha) {
+					break;
+				}
 			}
 		}
 
