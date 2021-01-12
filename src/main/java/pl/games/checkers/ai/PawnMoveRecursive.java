@@ -29,7 +29,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
      */
     public static List<MoveRate> getNextMoves(Board board, Pawn pawn) {
         if (pawn != null) {
-            return forkJoinPool.invoke(new PawnMoveRecursive(board.copy(), pawn));
+            return forkJoinPool.invoke(new PawnMoveRecursive(PawnBoard.create(board), pawn));
         }
         return List.of();
     }
@@ -67,10 +67,10 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
     private List<PawnMoveRecursive> createMovesOf(Board board, Pawn pawn) {
         List<PawnMoveRecursive> pawnMoveRecursives = new ArrayList<>();
 
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::towardLeft, pawn));
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::towardRight, pawn));
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::backwardLeft, pawn));
-        pawnMoveRecursives.addAll(changePosition(new PawnBoard(board), Position::backwardRight, pawn));
+        pawnMoveRecursives.addAll(changePosition(PawnBoard.create(board), Position::towardLeft, pawn));
+        pawnMoveRecursives.addAll(changePosition(PawnBoard.create(board), Position::towardRight, pawn));
+        pawnMoveRecursives.addAll(changePosition(PawnBoard.create(board), Position::backwardLeft, pawn));
+        pawnMoveRecursives.addAll(changePosition(PawnBoard.create(board), Position::backwardRight, pawn));
 
         return pawnMoveRecursives;
     }
@@ -95,9 +95,9 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
 
     private List<PawnMoveRecursive> changePosition(Board pawnBoard, BiFunction<Position, Integer, Position> operation, Pawn pawn) {
         if (pawn.isKing()) {
-            return changePositionOfKingPawn(new PawnBoard(pawnBoard), pawn.copy(), operation);
+            return changePositionOfKingPawn(PawnBoard.create(pawnBoard), pawn.copy(), operation);
         }
-        return changePositionOfMerePawn(new PawnBoard(pawnBoard), pawn.copy(), operation);
+        return changePositionOfMerePawn(PawnBoard.create(pawnBoard), pawn.copy(), operation);
     }
 
     private List<PawnMoveRecursive> changePositionOfMerePawn(Board pawnBoard, Pawn p, BiFunction<Position, Integer, Position> operation) {
@@ -126,7 +126,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
 
             p.nextPosition(operation.apply(p.nextPosition(), direction));
             if (pawnBoard.getPawn(p.nextPosition()) == null && Rules.isOnBoard().test(p.nextPosition())) {
-                pawnMoveRecursiveList.add(new PawnMoveRecursive(new PawnBoard(pawnBoard), p.copy(), false));
+                pawnMoveRecursiveList.add(new PawnMoveRecursive(PawnBoard.create(pawnBoard), p.copy(), false));
             }
         }
 
@@ -144,7 +144,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
         ) {
             if (pawnBoard.getPawn(p.nextPosition()) == null) {
                 p.setMove(new Move(MoveType.MOVE));
-                pawnMoveRecursiveList.add(new PawnMoveRecursive(new PawnBoard(pawnBoard), p.copy(), false));
+                pawnMoveRecursiveList.add(new PawnMoveRecursive(PawnBoard.create(pawnBoard), p.copy(), false));
             } else if (Rules.isOpponent(pawnBoard.getPawn(p.nextPosition())).test(p)) {
                 Pawn victim = pawnBoard.getPawn(p.nextPosition());
                 p.setMove(new Move(MoveType.KILL, victim));
@@ -152,7 +152,7 @@ public class PawnMoveRecursive extends RecursiveTask<List<MoveRate>> {
                      pawnBoard.getPawn(p.nextPosition()) == null && Rules.isOnBoard().test(p.nextPosition());
                      p.nextPosition(operation.apply(p.nextPosition(), direction))
                 ) {
-                    pawnMoveRecursiveList.add(new PawnMoveRecursive(new PawnBoard(pawnBoard), p.copy(), false));
+                    pawnMoveRecursiveList.add(new PawnMoveRecursive(PawnBoard.create(pawnBoard), p.copy(), false));
                 }
                 break;
             }

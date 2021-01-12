@@ -2,17 +2,16 @@ package pl.games.checkers.model;
 
 import pl.games.checkers.Copier;
 
-import java.awt.Point;
 import java.util.function.BiFunction;
 
-public class Position extends Point implements Copier<Position> {
+public class Position implements Copier<Position> {
 
-    //dummy variables to hide variables from parent
     private int x;
     private int y;
 
     public Position(int y, int x) {
-        super(x, y);
+        this.x = x;
+        this.y = y;
     }
 
     private Position(Position position) {
@@ -20,11 +19,11 @@ public class Position extends Point implements Copier<Position> {
     }
 
     public int column() {
-        return super.x;
+        return x;
     }
 
     public int row() {
-        return super.y;
+        return y;
     }
 
     public Position towardLeft(int direction) {

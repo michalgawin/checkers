@@ -1,6 +1,5 @@
 package pl.games.checkers.model;
 
-import pl.games.checkers.Copier;
 import pl.games.checkers.Rules;
 import pl.games.checkers.ai.GameTree;
 import pl.games.checkers.ai.algorithm.Minimax;
@@ -18,7 +17,7 @@ import java.util.stream.Stream;
  * Board represents checkerboard with pawns and provides basic operations on pawns.
  * @param <T> implementation of Pawn
  */
-public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
+public abstract class Board<T extends Pawn> {
 
     public static final int DEEPNESS = 6;
     private final int width;
@@ -56,11 +55,6 @@ public abstract class Board<T extends Pawn> implements Copier<Board<T>> {
 
     public int getHeight() {
         return height;
-    }
-
-    @Override
-    public Board copy() {
-        return new PawnBoard(this);
     }
 
     public Board removePawn(Position currentPosition) {
