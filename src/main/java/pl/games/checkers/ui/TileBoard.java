@@ -3,6 +3,8 @@ package pl.games.checkers.ui;
 import javafx.event.EventHandler;
 import javafx.scene.Group;
 import javafx.scene.input.MouseEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import pl.games.checkers.model.Position;
 import pl.games.checkers.model.Board;
 import pl.games.checkers.model.PawnType;
@@ -12,6 +14,8 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 public class TileBoard extends Board<PawnFigure> {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(TileBoard.class);
 
     private final Tile[][] tiles;
     private final Group tileGroup;
@@ -39,6 +43,8 @@ public class TileBoard extends Board<PawnFigure> {
                 }
             }
         }
+
+        LOGGER.info("***Game started***");
     }
 
     @Override
@@ -78,6 +84,38 @@ public class TileBoard extends Board<PawnFigure> {
     public TileBoard setTile(int y, int x, Tile tile) {
         tiles[y][x] = tile;
         return this;
+    }
+
+    @Override
+    public TileBoard movePawn(PawnFigure pawn, Position currentPosition, Position nextPosition) {
+        super.movePawn(pawn, currentPosition, nextPosition);
+        LOGGER.info(this.toString());
+        return this;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append('\n');
+        for (int i = 0; i < tiles.length; i++) {
+            stringBuilder.append('|');
+            for (int j = 0; j < tiles[i].length; j++) {
+                if (!tiles[i][j].isAllowed()) {
+                    stringBuilder.append(' ');
+                } else if (tiles[i][j].getPawn() != null) {
+                    if (tiles[i][j].getPawn().getType() == PawnType.WHITE) {
+                        stringBuilder.append('W');
+                    } else {
+                        stringBuilder.append('B');
+                    }
+                } else {
+                    stringBuilder.append('/');
+                }
+                stringBuilder.append('|');
+            }
+            stringBuilder.append('\n');
+        }
+        return stringBuilder.toString();
     }
 
     private PawnFigure createPawn(int row, int column) {

@@ -2,6 +2,7 @@ package pl.games.checkers.ai;
 
 import pl.games.checkers.model.Board;
 import pl.games.checkers.model.Pawn;
+import pl.games.checkers.model.PawnBoard;
 import pl.games.checkers.model.PawnType;
 
 import java.util.List;
@@ -20,7 +21,7 @@ public class HeuristicRate implements Rate {
 	private Optional<Long> rate = Optional.empty();
 
 	public HeuristicRate(final Board board, final PawnType pawnType) {
-		this.board = board.copy();
+		this.board = PawnBoard.create(board);
 		this.pawnType = pawnType;
 	}
 

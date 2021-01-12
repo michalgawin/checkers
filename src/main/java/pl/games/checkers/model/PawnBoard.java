@@ -6,7 +6,11 @@ public class PawnBoard extends Board<Pawn> {
 
     private final Pawn[][] pawns;
 
-    public PawnBoard(Board pawns) {
+    public static Board create(Board board) {
+        return new PawnBoard(board);
+    }
+
+    private PawnBoard(Board pawns) {
         this(pawns.getHeight(), pawns.getWidth(), pawns.pawnsAsList());
     }
 

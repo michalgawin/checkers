@@ -2,6 +2,7 @@ package pl.games.checkers.ai;
 
 import pl.games.checkers.model.Board;
 import pl.games.checkers.model.Pawn;
+import pl.games.checkers.model.PawnBoard;
 import pl.games.checkers.model.PawnType;
 
 import java.util.ArrayList;
@@ -16,19 +17,15 @@ import java.util.concurrent.RecursiveAction;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rate {
 
-	private static final Logger LOGGER = LoggerFactory.getLogger(GameTree.class);
 	private static final ForkJoinPool forkJoinPool = ForkJoinPool.commonPool();
 	private static final int DEFAULT_DEPTH = 1;
 
 	private final int depth;
 	private final Board board;
 	private final Pawn pawn; //specifies pawn move
-	private final List<GameTree> nodes = new LinkedList<>(); //possible states after moves
+	private final List<GameTree> nodes; //possible states of move
 	private final HeuristicRate heuristicRate;
 
 	private Optional<Pawn> constraint = Optional.empty(); //build game tree with first move limited to this pawn
@@ -42,10 +39,15 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 	}
 
 	public GameTree(final Board board, final PawnType pawnType, final Pawn pawn, int depth) {
-		this.board = board.copy();
-		this.pawn = pawn == null ? null : pawn;
-		this.heuristicRate = new HeuristicRate(board, pawnType);
+		this(board, pawn, depth, new LinkedList<>(), new HeuristicRate(board, pawnType));
+	}
+
+	public GameTree(final Board board, final Pawn pawn, int depth, List<GameTree> nodes, HeuristicRate heuristicRate) {
+		this.board = PawnBoard.create(board);
+		this.pawn = pawn;
 		this.depth = depth;
+		this.nodes = nodes;
+		this.heuristicRate = heuristicRate;
 	}
 
 	public GameTree constraint(Pawn constraint) {
@@ -105,7 +107,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 
 		boolean beating = false;
 		for (Pawn pawn : pawnList) {
-			if (updateNodes(beating, this.board.copy(), pawn)) {
+			if (updateNodes(beating, PawnBoard.create(board), pawn)) {
 				beating = true;
 			}
 		}
@@ -115,12 +117,12 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 
 	/**
 	 *
-	 * @param beating if true than only moves with beating are taking into account
+	 * @param beating if true then only moves with beating are taking into account
 	 * @param board state of board
 	 * @param pawn the pawn of which moves will be analyzed
 	 */
 	private boolean updateNodes(boolean beating, Board board, Pawn pawn) {
-		List<Pawn> pawnNextMoves = PawnMoveRecursive.getNextMoves(board.copy(), pawn).stream()
+		List<Pawn> pawnNextMoves = PawnMoveRecursive.getNextMoves(PawnBoard.create(board), pawn).stream()
 				.filter(Objects::nonNull)
 				.map(MoveRate::getPawn)
 				.filter(Objects::nonNull)
@@ -140,8 +142,7 @@ public class GameTree extends RecursiveAction implements Iterable<GameTree>, Rat
 		for (Pawn pawnNext : pawnNextMoves) {
 			if (!beating || (beating && pawnNext.hasBeating())) {
 				Pawn copy = pawnNext.copy();
-				LOGGER.debug("{}>> move: {}", "=".repeat(depth), pawnNext);
-				addNode(board.copy().move(pawnNext, pawnNext.nextPosition(), true), copy);
+				addNode(PawnBoard.create(board).move(pawnNext, pawnNext.nextPosition(), true), copy);
 			}
 		}
 		return beating && hasBeating;

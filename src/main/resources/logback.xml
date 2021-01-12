@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
+	<property name="LOG_DIR" value="logs" />
 
 	<appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
 		<layout class="ch.qos.logback.classic.PatternLayout">
@@ -9,10 +10,17 @@
 
 	<logger name="checkers" level="TRACE"/>
 
-	<appender name="FILE" class="ch.qos.logback.core.FileAppender">
-		<file>checkers.log</file>
+	<appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+			<level>DEBUG</level>
+		</filter>
+		<file>${LOG_DIR}/checkers.log</file>
+		<rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<fileNamePattern>${LOG_DIR}/checkers.%d{dd-MM-yyyy}.log</fileNamePattern>
+			<maxHistory>100</maxHistory>
+		</rollingPolicy>
 		<append>true</append>
-		<immediateFlush>false</immediateFlush>
+		<immediateFlush>true</immediateFlush>
 		<encoder>
 			<pattern>%-4relative [%thread] %-5level %logger{35} - %msg%n</pattern>
 		</encoder>
