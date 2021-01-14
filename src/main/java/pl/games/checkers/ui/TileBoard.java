@@ -100,16 +100,14 @@ public class TileBoard extends Board<PawnFigure> {
         for (int i = 0; i < tiles.length; i++) {
             stringBuilder.append('|');
             for (int j = 0; j < tiles[i].length; j++) {
-                if (!tiles[i][j].isAllowed()) {
+                if (Tile.isNotAllowed(i, j)) {
                     stringBuilder.append(' ');
-                } else if (tiles[i][j].getPawn() != null) {
-                    if (tiles[i][j].getPawn().getType() == PawnType.WHITE) {
-                        stringBuilder.append('W');
-                    } else {
-                        stringBuilder.append('B');
-                    }
-                } else {
+                } else if (tiles[i][j].getPawn() == null) {
                     stringBuilder.append('/');
+                } else {
+                    char p = tiles[i][j].getPawn().getType().name().charAt(0);
+                    p = tiles[i][j].getPawn().isKing() ? Character.toUpperCase(p) : Character.toLowerCase(p);
+                    stringBuilder.append(p);
                 }
                 stringBuilder.append('|');
             }

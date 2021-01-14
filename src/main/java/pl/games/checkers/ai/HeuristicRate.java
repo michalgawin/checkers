@@ -7,12 +7,14 @@ import pl.games.checkers.model.PawnType;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class HeuristicRate implements Rate {
 
 	private final int BEATING_SCORE = 10;
-	private final int KING_SCORE = 10;
+	private final int BEATING_KING_SCORE = 15;
+	private final int KING_SCORE = 15;
 	private final int SCORE_FOR_PAWN = 5;
 	private final int POSITION_SCORE = 1;
 
@@ -26,49 +28,48 @@ public class HeuristicRate implements Rate {
 	}
 
 	@Override public Long rate() {
-		return rate.orElseGet(() -> summarizeAll(pawnType));
+		return rate.orElseGet(() -> summarizeAll());
 	}
 
 	public PawnType getPawnType() {
 		return pawnType;
 	}
 
-	private long summarizeAll(final PawnType pawnType) {
+	private long summarizeAll() {
 		List<Pawn> pawns = (List<Pawn>) board.pawnsAsList();
 
-		List<Pawn> pawns1 = pawns.stream().filter(p -> p.getType() == PawnType.BLACK).collect(Collectors.toList());
-		long count1 = pawns1.stream().count();
-		long scorePosition1 = pawns1.stream().mapToInt(this::scoreForPosition).sum();
-		long scoreForKing1 = pawns1.stream().mapToInt(this::scoreForKing).sum();
-		long scoreBeating1 = pawns1.stream().mapToInt(p -> hasBeating(board, p)).sum();
-		long sum1 = count1 + scorePosition1 + scoreForKing1 + scoreBeating1;
+		List<Pawn> blackPawns = pawns.stream().filter(p -> p.getType() == PawnType.BLACK).collect(Collectors.toList());
+		long sum1 = rate(blackPawns);
 
-		List<Pawn> pawns2 = pawns.stream().filter(p -> p.getType() != PawnType.BLACK).collect(Collectors.toList());
-		long count2 = pawns2.stream().count();
-		long scorePosition2 = pawns2.stream().mapToInt(this::scoreForPosition).sum();
-		long scoreForKing2 = pawns2.stream().mapToInt(this::scoreForKing).sum();
-		long scoreBeating2 = pawns2.stream().mapToInt(p -> hasBeating(board, p)).sum();
-		long sum2 = count2 + scorePosition2 + scoreForKing2 + scoreBeating2;
+		List<Pawn> whitePawns = pawns.stream().filter(p -> p.getType() == PawnType.WHITE).collect(Collectors.toList());
+		long sum2 = rate(whitePawns);
 
-		sum1 += (count2 == 0) ? 1000 : 0;
-		sum2 += (count1 == 0) ? 1000 : 0;
+		sum1 += (blackPawns.stream().count() == 0) ? 1000 : 0;
+		sum2 += (whitePawns.stream().count() == 0) ? 1000 : 0;
 
 		long sum = sum1 - sum2;
 		this.rate = Optional.of(sum);
+
 		return sum;
 	}
 
+	private long rate(List<Pawn> pawns) {
+		long scoreCount = pawns.stream().count() * SCORE_FOR_PAWN;
+		long scorePosition = pawns.stream()
+				.filter(Predicate.not(Pawn::isKing))
+				.mapToInt(this::scoreForPosition).sum();
+		long scoreForKing = pawns.stream().mapToInt(this::scoreForKing).sum();
+		long scoreBeating = pawns.stream().mapToInt(p -> hasBeating(board, p)).sum();
+
+		return scoreCount + scorePosition + scoreForKing + scoreBeating;
+	}
+
 	private int scoreForPosition(final Pawn pawn) {
-		int scoreForRow = 0;
 		if (pawn == null) {
-			return scoreForRow;
+			return 0;
 		}
 		int scoreForColumn = (pawn.currentPosition().column() > 1 && pawn.currentPosition().column() < 6) ? 2 : 1;
-		if (pawn.getType().getDirection() > 0) {
-			scoreForRow = (pawn.currentPosition().row() + 1) * POSITION_SCORE;
-		} else {
-			scoreForRow = (8 - pawn.currentPosition().row()) * POSITION_SCORE;
-		}
+		int scoreForRow = (pawn.currentPosition().row() > 1 && pawn.currentPosition().row() < 6) ? 2 : 1;
 		return scoreForColumn + scoreForRow;
 	}
 
@@ -87,7 +88,10 @@ public class HeuristicRate implements Rate {
 		if (bestMove == null) {
 			return 0;
 		}
-		return bestMove.getPawn().hasBeating() ? BEATING_SCORE : 0;
+		if (bestMove.getPawn().hasBeating()) {
+			return bestMove.getPawn().killedPawn().isKing() ? BEATING_KING_SCORE : BEATING_SCORE;
+		}
+		return 0;
 	}
 
 	@Override
